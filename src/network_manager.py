@@ -10,10 +10,14 @@ class NetworkManger:
         self.client_ips = {}
 
     def run_cmd(self, cmd):
-        logger.debug(f"Running: {cmd}")
-        subprocess.run(cmd, shell=True, check=True)
+        subprocess.run(
+            cmd, 
+            shell=True, 
+            check=True, 
+            capture_output=True
+        )
 
-    def wait_for_ip(self, namespace, interface, timeout=10):
+    def wait_for_ip(self, namespace, interface, timeout=2):
         start = time.time()
         while time.time() - start < timeout:
             try:
@@ -28,7 +32,6 @@ class NetworkManger:
                     return True
             except subprocess.CalledProcessError:
                 pass
-            time.sleep(0.5)
         logger.warning(f"{namespace} did not get IP within {timeout}s.")
         return False
 

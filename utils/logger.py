@@ -6,20 +6,20 @@ LOG_FILE = "network_stress_report.log"
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+    format="[%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
 logger = logging.getLogger("network_test")
 logger.handlers = [] 
 
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-logger.addHandler(console_handler)
+# console_handler = logging.StreamHandler()
+# console_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+# logger.addHandler(console_handler)
 
 if os.path.exists(LOG_FILE):
     os.remove(LOG_FILE)
 
 file_handler = logging.FileHandler(LOG_FILE)
-file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+file_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
 logger.addHandler(file_handler)

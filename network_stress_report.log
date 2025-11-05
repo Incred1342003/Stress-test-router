@@ -1,10 +1,18 @@
-2025-11-05 06:04:30,709 [INFO] Starting Network Stress Test Suite...
-2025-11-05 06:04:30,714 [INFO] --- GIVEN: Creating 2 Virtual Clients ---
-2025-11-05 06:04:31,417 [INFO] ns1 got IP: 192.168.1.187/24
-2025-11-05 06:04:32,102 [INFO] ns2 got IP: 192.168.1.188/24
-2025-11-05 06:04:32,103 [INFO] Created 2 namespaces successfully.
-2025-11-05 06:04:32,104 [INFO] STATUS: 2 clients successfully created and assigned IP addresses.
-2025-11-05 06:04:32,104 [INFO] Cleaning up network namespaces....
-2025-11-05 06:04:33,280 [INFO] Deleted namespace: ns2
-2025-11-05 06:04:34,437 [INFO] Deleted namespace: ns1
-2025-11-05 06:04:34,438 [INFO] All namespaces deleted. Test suite complete.
+[INFO] ----- STARTING NETWORK STRESS TEST -----
+[INFO] ----- BEFORE SCENARIO CLEANING PROCESS STARTS -----
+[INFO] All client deleted Successfully
+[INFO] --- GIVEN: Creating 10 Virtual Clients ---
+[INFO] ns1 got IP: 192.168.1.187/24
+[INFO] ns2 got IP: 192.168.1.188/24
+[INFO] ns3 got IP: 192.168.1.232/24
+[INFO] ns4 got IP: 192.168.1.233/24
+[INFO] ns5 got IP: 192.168.1.234/24
+[INFO] ns6 got IP: 192.168.1.235/24
+[INFO] ns7 got IP: 192.168.1.236/24
+[INFO] ns8 got IP: 192.168.1.237/24
+[INFO] ns9 got IP: 192.168.1.238/24
+[INFO] ns10 got IP: 192.168.1.239/24
+[INFO] Created 10 namespaces successfully.
+[INFO] STATUS: 10 clients successfully created and assigned IP addresses.
+[INFO] ----- END CLEANING PROCESS STARTS -----
+[INFO] All client deleted Successfully
