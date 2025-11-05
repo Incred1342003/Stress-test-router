@@ -3,7 +3,7 @@ import time
 from utils.logger import logger
 import os
 
-class NetworkManger:
+class NetworkManager:
     def __init__(self, parent_if="eth0"):
         self.parent_if = parent_if
         self.client_namespaces = []
@@ -16,6 +16,25 @@ class NetworkManger:
             check=True, 
             capture_output=True
         )
+
+    def cleanup(self):
+        logger.info("----- IP is Not Alloated to some client, Aborting -----")
+        output = subprocess.check_output("sudo ip netns list", shell=True).decode().strip()
+        namespaces = [line.split()[0] for line in output.splitlines() if line]
+
+        for i in range(len(namespaces)):
+            ns = namespaces[i]
+            try:
+                macvlan = f"macvlan{ns[2:]}"
+                subprocess.run(
+                    f"sudo ip netns exec {ns} dhclient -r {macvlan} -pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases", 
+                    shell=True,
+                    capture_output=True 
+                )
+                subprocess.run(f"sudo ip netns delete {ns}", shell=True, check=True)
+            except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to delete {ns}: {e}")
+        logger.info("All client deleted Successfully that was created")
 
     def wait_for_ip(self, namespace, interface, timeout=2):
         start = time.time()
@@ -49,13 +68,27 @@ class NetworkManger:
                 self.run_cmd(f"sudo ip netns exec {ns} ip link set dev {macvlan} up")
                 self.run_cmd(f"sudo ip netns exec {ns} ip link set lo up")
                 self.run_cmd(f"sudo ip netns exec {ns} dhclient -v {macvlan} -pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases &")
-                self.wait_for_ip(ns, macvlan)
+                
+                success = self.wait_for_ip(ns, macvlan)
+                retries = 0
+                while not success and retries < 3:
+                    logger.warning(f"{ns} retrying IP acquisition ({retries + 1}/3)...")
+                    time.sleep(1)
+                    success = self.wait_for_ip(ns, macvlan)
+                    retries += 1
+
+                if not success:
+                    self.run_cmd(f"sudo ip netns delete {ns}")
+                    logger.error(f"{ns} failed to get IP after 4 attempts. Aborting...")
+                    self.cleanup()
+                    return
+                
             except subprocess.CalledProcessError as e:
                 logger.error(f"Failed to create {ns}: {e}")
-                continue
+                self.cleanup()
+                return
 
         logger.info(f"Created {count} namespaces successfully.")
-
 
 
     def run_stress_client(self, ns, duration=30):
@@ -114,23 +147,6 @@ class NetworkManger:
 
     #     logger.info(f"{ns}: launched mixed NAT-heavy load for {duration}s.")
     #     return processes
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

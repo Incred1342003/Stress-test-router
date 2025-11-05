@@ -1,6 +1,6 @@
 from utils.logger import logger
 import subprocess
-from src.network_manager import NetworkManger
+from src.network_manager import NetworkManager
 import time
 
 def before_all(context):

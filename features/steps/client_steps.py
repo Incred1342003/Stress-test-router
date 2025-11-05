@@ -1,5 +1,5 @@
 from behave import given, when, then
-from src.network_manager import NetworkManger
+from src.network_manager import NetworkManager
 from src.ping_manager import PingManager
 from utils.logger import logger
 import asyncio
@@ -7,7 +7,7 @@ import asyncio
 @given('I create {count:d} clients connected to the router')
 def step_create_clients(context, count):
     logger.info(f"--- GIVEN: Creating {count} Virtual Clients ---")
-    context.net_mgr = NetworkManger(parent_if="eth0")
+    context.net_mgr = NetworkManager(parent_if="eth0")
     context.net_mgr.create_clients(count)
     logger.info(f"STATUS: {count} clients successfully created and assigned IP addresses.")
  
