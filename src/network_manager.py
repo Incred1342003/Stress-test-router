@@ -1,168 +1,121 @@
-import subprocess
+import asyncio
 import time
 from utils.logger import logger
-import os
+import subprocess
+from unittest import SkipTest
 
 class NetworkManager:
     def __init__(self, parent_if="eth0"):
         self.parent_if = parent_if
         self.client_namespaces = []
         self.client_ips = {}
+        self.isFailed = False
+        self.count = 0
 
-    def run_cmd(self, cmd):
-        subprocess.run(
-            cmd, 
-            shell=True, 
-            check=True, 
-            capture_output=True
+    async def run_cmd(self, cmd):
+        proc = await asyncio.create_subprocess_shell(
+            cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
         )
+        stdout, stderr = await proc.communicate()
+        if proc.returncode != 0:
+            raise subprocess.CalledProcessError(proc.returncode, cmd, output=stdout, stderr=stderr)
+        return stdout.decode()
 
-    def cleanup(self):
-        logger.info("----- IP is Not Alloated to some client, Aborting -----")
-        output = subprocess.check_output("sudo ip netns list", shell=True).decode().strip()
-        namespaces = [line.split()[0] for line in output.splitlines() if line]
-
-        for i in range(len(namespaces)):
-            ns = namespaces[i]
-            try:
-                macvlan = f"macvlan{ns[2:]}"
-                subprocess.run(
-                    f"sudo ip netns exec {ns} dhclient -r {macvlan} -pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases", 
-                    shell=True,
-                    capture_output=True 
-                )
-                subprocess.run(f"sudo ip netns delete {ns}", shell=True, check=True)
-            except subprocess.CalledProcessError as e:
-                logger.warning(f"Failed to delete {ns}: {e}")
-        logger.info("All client deleted Successfully that was created")
-
-    def wait_for_ip(self, namespace, interface, timeout=2):
+    async def wait_for_ip(self, namespace, interface, timeout=2):
         start = time.time()
         while time.time() - start < timeout:
             try:
-                output = subprocess.check_output(
-                    f"sudo ip netns exec {namespace} ip -4 addr show {interface}",
-                    shell=True
-                ).decode()
+                output = await self.run_cmd(f"sudo ip netns exec {namespace} ip -4 addr show {interface}")
                 if "inet " in output:
                     ip = output.split("inet ")[1].split()[0]
                     logger.info(f"{namespace} got IP: {ip}")
                     self.client_ips[namespace] = ip
                     return True
             except subprocess.CalledProcessError:
-                pass
+                await asyncio.sleep(0.5)
         logger.warning(f"{namespace} did not get IP within {timeout}s.")
         return False
 
-    def create_clients(self, count):
-        for i in range(1, count + 1):
-            ns = f"ns{i}"
-            macvlan = f"macvlan{i}"
-            mac = f"00:00:00:12:11:{i:02x}"
-            self.client_namespaces.append(ns) 
+    async def cleanup(self):
+        logger.info("----- IP is Not Alloated to some client, Aborting -----")
+        try:
+            output = await self.run_cmd("sudo ip netns list")
+            namespaces = [line.split()[0] for line in output.splitlines() if line]
 
-            try:
-                self.run_cmd(f"sudo ip netns add {ns}")
-                self.run_cmd(f"sudo ip link add link eth0 {macvlan} address {mac} type macvlan mode bridge")
-                self.run_cmd(f"sudo ip link set {macvlan} netns {ns}")
-                self.run_cmd(f"sudo ip netns exec {ns} ip link set dev {macvlan} up")
-                self.run_cmd(f"sudo ip netns exec {ns} ip link set lo up")
-                self.run_cmd(f"sudo ip netns exec {ns} dhclient -v {macvlan} -pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases &")
-                
-                success = self.wait_for_ip(ns, macvlan)
-                retries = 0
-                while not success and retries < 3:
-                    logger.warning(f"{ns} retrying IP acquisition ({retries + 1}/3)...")
-                    time.sleep(1)
-                    success = self.wait_for_ip(ns, macvlan)
-                    retries += 1
+            for ns in namespaces:
+                macvlan = f"macvlan{ns[2:]}"
+                try:
+                    output = await self.run_cmd(f"sudo ip netns exec {ns} ip -4 addr show {macvlan}")
+                    if "inet " in output:
+                        await self.run_cmd(
+                            f"sudo ip netns exec {ns} dhclient -r {macvlan} "
+                            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
+                        )
+                    await self.run_cmd(f"sudo ip netns delete {ns}")
+                except subprocess.CalledProcessError as e:
+                    logger.warning(f"Failed to delete {ns}: {e}")
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to list namespaces: {e}")
+        logger.info("All client deleted Successfully that was created")
 
-                if not success:
-                    self.run_cmd(f"sudo ip netns delete {ns}")
-                    logger.error(f"{ns} failed to get IP after 4 attempts. Aborting...")
-                    self.cleanup()
+    async def create_client(self, i):
+        ns = f"ns{i}"
+        macvlan = f"macvlan{i}"
+        mac = f"00:00:02:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
+        self.client_namespaces.append(ns)
+
+        try:
+            await self.run_cmd(f"sudo ip netns add {ns}")
+            await self.run_cmd(f"sudo ip link add link {self.parent_if} {macvlan} address {mac} type macvlan mode bridge")
+            await self.run_cmd(f"sudo ip link set {macvlan} netns {ns}")
+            await self.run_cmd(f"sudo ip netns exec {ns} ip link set dev {macvlan} up")
+            await self.run_cmd(f"sudo ip netns exec {ns} ip link set lo up")
+            await self.run_cmd(
+                f"sudo ip netns exec {ns} dhclient -v {macvlan} "
+                f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases &"
+            )
+
+            for attempt in range(4):
+                if await self.wait_for_ip(ns, macvlan):
+                    self.count+=1
                     return
-                
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Failed to create {ns}: {e}")
-                self.cleanup()
-                return
+                logger.warning(f"{ns} retrying IP acquisition ({attempt + 1}/4)...")
+                await asyncio.sleep(1)
 
+            self.isFailed = True
+
+        except subprocess.CalledProcessError as e:
+            logger.error(f"Failed to create {ns}: {e}")
+            self.isFailed = True
+
+    async def create_clients(self, count):
+        tasks = [self.create_client(i) for i in range(1, count + 1)]
+        await asyncio.gather(*tasks)
+        logger.info(f"----- ONLY {self.count} / {count} got IP ------")
+        self.count = 0
+        if(self.isFailed):
+            self.isFailed = False
+            raise SkipTest("Skipping scenario due to failed client creation")
         logger.info(f"Created {count} namespaces successfully.")
 
-
-    def run_stress_client(self, ns, duration=30):
-        logger.info(f"{ns}: starting real-world router stress for {duration}s")
-
-        cmd = (
-            f"sudo ip netns exec {ns} bash -c '"
-            # # Massive parallel HTTP downloads
-            # f"for i in {{1..50}}; do "
-            # f"  (timeout {duration}s curl -s http://speed.hetzner.de/100MB.bin >/dev/null 2>&1 &) ; "
-            # f"done; "
-            # # Random DNS floods
-            f"for i in {{1..1000}}; do "
-            f"  (timeout {duration}s dig @8.8.8.8 google.com >/dev/null 2>&1 &) ; "
-            f"done; "
-            # # Continuous ICMP flood (to trigger QoS and ICMP handling)
-            # f"ping -f -c 100000 8.8.8.8 >/dev/null 2>&1 &'"
-            "'"
-        )
-
-        return subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
-
-
-
-
-
-
-
-
-
     # def run_stress_client(self, ns, duration=30):
-    #     target_ip = "8.8.8.8"  # or some public IP that ensures router does NAT
-    #     processes = []
+    #     logger.info(f"{ns}: starting real-world router stress for {duration}s")
 
-    #     # 1️⃣ Parallel ICMP floods (low level)
-    #     ping_cmd = f"sudo ip netns exec {ns} ping -f -i 0.0001 -c 100000 {target_ip}"
-    #     processes.append(subprocess.Popen(ping_cmd, shell=True,
-    #                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
-
-    #     # 2️⃣ Parallel TCP floods (small bursts)
-    #     tcp_cmd = (
-    #         f"sudo ip netns exec {ns} bash -c "
-    #         f"'for i in {{1..200}}; do "
-    #         f"  (timeout {duration}s curl -s http://speed.hetzner.de/100MB.bin >/dev/null 2>&1 &) ; "
-    #         f"done; wait'"
-    #     )
-    #     processes.append(subprocess.Popen(tcp_cmd, shell=True,
-    #                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
-
-    #     # 3️⃣ UDP/iperf random load
-    #     iperf_cmd = f"sudo ip netns exec {ns} iperf3 -u -b 100M -c {target_ip} -t {duration}"
-    #     processes.append(subprocess.Popen(iperf_cmd, shell=True,
-    #                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL))
-
-    #     logger.info(f"{ns}: launched mixed NAT-heavy load for {duration}s.")
-    #     return processes
-
-
-
-
-
-
-
-
-
-
-
-    # def run_stress_client(self, ns, duration=30):
-    #     laptop_ip = "192.168.1.7"
     #     cmd = (
-    #         f"sudo ip netns exec {ns} iperf3 -c {laptop_ip} "
-    #         f"-t {duration} "
-    #         f"-P 8 -O 3"
+    #         f"sudo ip netns exec {ns} bash -c '"
+    #         # # Massive parallel HTTP downloads
+    #         # f"for i in {{1..50}}; do "
+    #         # f"  (timeout {duration}s curl -s http://speed.hetzner.de/100MB.bin >/dev/null 2>&1 &) ; "
+    #         # f"done; "
+    #         # # Random DNS floods
+    #         f"for i in {{1..1000}}; do "
+    #         f"  (timeout {duration}s dig @8.8.8.8 google.com >/dev/null 2>&1 &) ; "
+    #         f"done; "
+    #         # # Continuous ICMP flood (to trigger QoS and ICMP handling)
+    #         # f"ping -f -c 100000 8.8.8.8 >/dev/null 2>&1 &'"
+    #         "'"
     #     )
-    #     return subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    #     return subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

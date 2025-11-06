@@ -7,9 +7,15 @@ import asyncio
 @given('I create {count:d} clients connected to the router')
 def step_create_clients(context, count):
     logger.info(f"--- GIVEN: Creating {count} Virtual Clients ---")
-    context.net_mgr = NetworkManager(parent_if="eth0")
-    context.net_mgr.create_clients(count)
+    context.net_mgr = NetworkManager()
+    asyncio.run(context.net_mgr.create_clients(count))
     logger.info(f"STATUS: {count} clients successfully created and assigned IP addresses.")
+
+# @when('All the client pinging parallel')
+# def ping_parallel(context):
+#     pm = PingManager(duration=60, workers_per_ns=5)
+#     asyncio.run(pm.run_test([ns for ns in context.net_mgr.client_namespaces]))
+
  
 # @when('all client performing heavy tasks')
 # def heavy_task(context):
