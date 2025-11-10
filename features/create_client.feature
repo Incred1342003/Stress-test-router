@@ -6,16 +6,4 @@ Feature: Network Stress Testing via Virtual Clients
         Given I create 10 clients connected to the router
         When All the client pinging parallel
 
-    Scenario: Launch 10 clents and verify ping to router
-        Given I create 10 clients connected to the router
-        When All the client pinging parallel
-
-    Scenario: Launch 10 clents and verify ping to router
-        Given I create 10 clients connected to the router
-        When All the client pinging parallel
-
-    Scenario: Launch 10 clents and verify ping to router
-        Given I create 10 clients connected to the router
-        When All the client pinging parallel
-
-      
+    
