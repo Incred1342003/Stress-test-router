@@ -63,7 +63,7 @@ class NetworkManager:
     async def create_client(self, i):
         ns = f"ns{i}"
         macvlan = f"macvlan{i}"
-        mac = f"00:00:02:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
+        mac = f"00:1A:79:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
         self.client_namespaces.append(ns)
 
         try:

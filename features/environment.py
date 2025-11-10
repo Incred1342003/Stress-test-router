@@ -3,9 +3,6 @@ import subprocess
 import time
 from utils.logger import logger
 
-# -------------------------------
-# Async command runner
-# -------------------------------
 async def run_cmd(cmd):
     proc = await asyncio.create_subprocess_shell(
         cmd,
@@ -17,9 +14,6 @@ async def run_cmd(cmd):
         raise subprocess.CalledProcessError(proc.returncode, cmd, output=stdout, stderr=stderr)
     return stdout.decode()
 
-# -------------------------------
-# Per-namespace cleanup task
-# -------------------------------
 async def cleanup_namespace(ns):
     macvlan = f"macvlan{ns[2:]}"
     try:
@@ -31,9 +25,7 @@ async def cleanup_namespace(ns):
     except subprocess.CalledProcessError as e:
         logger.warning(f"Failed to delete {ns}: {e}")
 
-# -------------------------------
-# Async cleanup wrapper
-# -------------------------------
+
 async def async_cleanup():
     logger.info("----- ASYNC CLEANUP STARTED -----")
     try:
@@ -45,9 +37,6 @@ async def async_cleanup():
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to list namespaces: {e}")
 
-# -------------------------------
-# Sync wrapper for Behave hooks
-# -------------------------------
 def cleanup():
     asyncio.run(async_cleanup())
 
