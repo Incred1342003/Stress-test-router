@@ -1,2 +1,4 @@
 *.log
-src/__pycache__added folder name to gitigonre
+src/__pycache__
+utils/__pycache__
+__pycache__

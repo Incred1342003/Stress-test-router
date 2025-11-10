@@ -99,23 +99,3 @@ class NetworkManager:
             self.isFailed = False
             raise SkipTest("Skipping scenario due to failed client creation")
         logger.info(f"Created {count} namespaces successfully.")
-
-    # def run_stress_client(self, ns, duration=30):
-    #     logger.info(f"{ns}: starting real-world router stress for {duration}s")
-
-    #     cmd = (
-    #         f"sudo ip netns exec {ns} bash -c '"
-    #         # # Massive parallel HTTP downloads
-    #         # f"for i in {{1..50}}; do "
-    #         # f"  (timeout {duration}s curl -s http://speed.hetzner.de/100MB.bin >/dev/null 2>&1 &) ; "
-    #         # f"done; "
-    #         # # Random DNS floods
-    #         f"for i in {{1..1000}}; do "
-    #         f"  (timeout {duration}s dig @8.8.8.8 google.com >/dev/null 2>&1 &) ; "
-    #         f"done; "
-    #         # # Continuous ICMP flood (to trigger QoS and ICMP handling)
-    #         # f"ping -f -c 100000 8.8.8.8 >/dev/null 2>&1 &'"
-    #         "'"
-    #     )
-
-    #     return subprocess.Popen(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

@@ -49,10 +49,10 @@ def before_all(context):
 
 def before_scenario(context, scenario):
     logger.info("----- BEFORE SCENARIO CLEANING PROCESS STARTS -----")
+    cleanup()
     logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
 
 def after_all(context):
-    time.sleep(20)
     logger.info("----- END CLEANING PROCESS STARTS -----")
     cleanup()
     logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
