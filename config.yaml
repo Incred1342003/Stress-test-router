@@ -1,0 +1,4 @@
+network:
+  parent_interface: eth0
+  router_ip: 192.168.1.1
+  ping_duration: 60

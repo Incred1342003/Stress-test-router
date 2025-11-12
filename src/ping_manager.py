@@ -3,12 +3,14 @@ import random
 import time
 from utils.logger import logger
 from utils.command_runner import run_cmd
-
+from utils.config_loader import load_config
 
 class PingManager:
-    def __init__(self, router_ip="192.168.1.1", duration=60):
-        self.router_ip = router_ip
-        self.duration = duration
+    def __init__(self):
+        config = load_config()
+        self.router_ip = config["network"]["router_ip"]
+        self.duration = config["network"]["ping_duration"]
+
 
     async def worker(self, ns, end_time):
         while time.time() < end_time:
