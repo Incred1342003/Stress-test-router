@@ -14,6 +14,6 @@ def step_create_clients(context, count):
 @when('All the client pinging parallel')
 def ping_parallel(context):
     logger.info("------ PRALLEL CLIENT PING STARTED -----")
-    pm = PingManager(duration=60)
+    pm = PingManager()
     asyncio.run(pm.run_test([ns for ns in context.net_mgr.client_namespaces]))
     logger.info("----- STOPPED PING -----")

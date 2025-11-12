@@ -4,10 +4,12 @@ from utils.logger import logger
 import subprocess
 from unittest import SkipTest
 from utils.command_runner import run_cmd
+from utils.config_loader import load_config
 
 class NetworkManager:
-    def __init__(self, parent_if="eth0"):
-        self.parent_if = parent_if
+    def __init__(self):
+        config = load_config()
+        self.parent_if = config["network"]["parent_interface"]
         self.client_namespaces = []
         self.client_ips = {}
         self.isFailed = False
