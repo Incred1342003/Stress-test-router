@@ -1,18 +1,7 @@
 import asyncio
 import subprocess
-import time
 from utils.logger import logger
-
-async def run_cmd(cmd):
-    proc = await asyncio.create_subprocess_shell(
-        cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE
-    )
-    stdout, stderr = await proc.communicate()
-    if proc.returncode != 0:
-        raise subprocess.CalledProcessError(proc.returncode, cmd, output=stdout, stderr=stderr)
-    return stdout.decode()
+from utils.command_runner import run_cmd
 
 async def cleanup_namespace(ns):
     macvlan = f"macvlan{ns[2:]}"
@@ -40,9 +29,6 @@ async def async_cleanup():
 def cleanup():
     asyncio.run(async_cleanup())
 
-# -------------------------------
-# Behave lifecycle hooks
-# -------------------------------
 def before_all(context):
     logger.info("----- STARTING NETWORK STRESS TEST -----")
     cleanup()
