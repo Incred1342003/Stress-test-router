@@ -4,12 +4,10 @@ from utils.logger import logger
 import subprocess
 from unittest import SkipTest
 from utils.command_runner import run_cmd
-from utils.config_loader import load_config
 
 class NetworkManager:
-    def __init__(self):
-        config = load_config()
-        self.parent_if = config["network"]["parent_interface"]
+    def __init__(self, interface):
+        self.parent_if = interface
         self.client_namespaces = []
         self.client_ips = {}
         self.isFailed = False
@@ -91,3 +89,19 @@ class NetworkManager:
             self.isFailed = False
             raise SkipTest("Skipping scenario due to failed client creation")
         logger.info(f"Created {count} namespaces successfully.")
+
+    def get_namespace_ip(self, ns):
+        """Returns output of 'ip addr show' inside namespace."""
+        cmd = f"sudo ip netns exec {ns} ip addr show"
+        result = subprocess.run(shlex.split(cmd),
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        return result.stdout.decode("utf-8")
+
+    def ping_ip_from_ns(self, ns, ip):
+        """Returns True/False based on ping output."""
+        cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
+        result = subprocess.run(shlex.split(cmd),
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        return result.returncode == 0

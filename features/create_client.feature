@@ -1,9 +1,36 @@
-Feature: Network Stress Testing via Virtual Clients
-    I want to simulate multiple clients connecting via macvlan
-    So that I can verify router DHCP and connectivity under load
+Feature: Network Stress Testing Using Virtual Clients
+  To ensure that the router performs reliably under heavy load,
+  As a network tester,
+  I want to automatically create multiple virtual clients using macvlan
+  And verify that each client receives a valid IP and can reach the router.
 
-    Scenario: Launch 10 clents and verify ping to router
-        Given I create 10 clients connected to the router
-        When All the client pinging parallel
+  Background:
+    Given the router IP address is configured
+    And the base network interface is available on the system
 
-    
+  @stress_test
+  Scenario: Create multiple virtual clients and verify connectivity
+    Given I create 10 virtual clients using macvlan
+    Then each client should receive a valid IP address from the router
+    And no two clients should receive the same IP address
+    And all assigned IPs should be reachable
+    When all clients attempt to ping the router simultaneously
+    Then each client should successfully reach the router
+    And the overall network connectivity should remain stable
+
+  @scalability
+  Scenario Outline: Stress test router with varying number of clients
+    Given I create <client_count> virtual clients using macvlan
+    Then each client should receive a valid IP address from the router
+    And no two clients should receive the same IP address
+    And all assigned IPs should be reachable
+    When all clients attempt to ping the router simultaneously
+    Then each client should successfully reach the router
+    And no client should lose network connectivity
+
+    Examples:
+      | client_count |
+      | 5            |
+      | 10           |
+      | 20           |
+      | 50           |

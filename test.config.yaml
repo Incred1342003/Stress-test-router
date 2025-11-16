@@ -1,0 +1,5 @@
+router_ip: "<your_router_ip>"
+interface: "<your_interface>"
+ping_duration: <duration_in_seconds>
+download_url: "<your_100GB_zip_file_url>"
+download_timeout: <timeout_in_seconds>

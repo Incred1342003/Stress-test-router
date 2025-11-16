@@ -1,3 +1,4 @@
+import yaml
 import asyncio
 import subprocess
 from utils.logger import logger
@@ -31,6 +32,10 @@ def cleanup():
 
 def before_all(context):
     logger.info("----- STARTING NETWORK STRESS TEST -----")
+    logger.info("Loading configuration from config.yaml")
+    with open("config.yaml") as file:
+        context.config = yaml.safe_load(file)
+    logger.info("Configuration loaded successfully.")
     cleanup()
 
 def before_scenario(context, scenario):
