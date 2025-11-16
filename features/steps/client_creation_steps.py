@@ -1,6 +1,6 @@
 import asyncio
 from behave import given
-from src.network_manager import NetworkManager
+from src.client_manager import NetworkManager
 from utils.logger import logger
 
 @given('I create {count:d} virtual clients using macvlan')
