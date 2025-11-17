@@ -4,6 +4,7 @@ from utils.logger import logger
 import subprocess
 from unittest import SkipTest
 from utils.command_runner import run_cmd
+import shlex
 
 class NetworkManager:
     def __init__(self, interface):
@@ -20,7 +21,8 @@ class NetworkManager:
                 output = await run_cmd(f"sudo ip netns exec {namespace} ip -4 addr show {interface}")
                 if "inet " in output:
                     ip = output.split("inet ")[1].split()[0]
-                    logger.info(f"{namespace} got IP: {ip}")
+                    ip_only = ip.split("/")[0]
+                    logger.info(f"{namespace} got IP: {ip_only}")
                     self.client_ips[namespace] = ip
                     return True
             except subprocess.CalledProcessError:
@@ -100,6 +102,7 @@ class NetworkManager:
 
     def ping_ip_from_ns(self, ns, ip):
         """Returns True/False based on ping output."""
+
         cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
         result = subprocess.run(shlex.split(cmd),
                                 stdout=subprocess.PIPE,

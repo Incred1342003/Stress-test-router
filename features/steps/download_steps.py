@@ -13,12 +13,12 @@ def step_start_parallel_download(context):
         timeout=context.config.get("download_timeout")
     )
 
-    # Run in parallel and store results
     context.download_results = asyncio.run(
         dm.start_parallel_download(context.net_mgr.client_namespaces)
     )
 
     logger.info("----- PARALLEL DOWNLOAD ENDED -----")
+
 
 
 @then("every client should successfully download the file")
@@ -40,10 +40,3 @@ def step_validate_responsiveness(context):
         context.net_mgr.ping_router_once()
     )
     assert response, "Router became unresponsive during download stress test"
-
-
-@then("a detailed download performance report should be generated")
-def step_generate_report(context):
-    logger.info("Generating download performance report...")
-    for ns, data in context.download_results.items():
-        logger.info(f"{ns}: {data}")

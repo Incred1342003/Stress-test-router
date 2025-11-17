@@ -4,7 +4,7 @@ import os
 @given("the router IP address is configured")
 def step_router_ip_configured(context):
     router_ip = context.config.get("router_ip")
-    assert context.router_ip is not None, "Router IP address is not configured."
+    assert router_ip is not None, "Router IP address is not configured."
     context.router_ip = router_ip
 
 

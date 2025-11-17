@@ -1,8 +1,20 @@
 import asyncio
 import time
 from utils.logger import logger
-from utils.command_runner import run_cmd
 
+async def run_cmd(cmd, suppress_output=False):
+    proc = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await proc.communicate()
+
+    return {
+        "returncode": proc.returncode,
+        "stdout": None if suppress_output else stdout.decode(),
+        "stderr": None if suppress_output else stderr.decode(),
+    }
 
 class DownloadManager:
     def __init__(self, url, timeout):
@@ -10,33 +22,23 @@ class DownloadManager:
         self.timeout = timeout
 
     async def worker(self, ns, results):
-        """
-        Each namespace downloads the file independently.
-        Captures:
-          - success/failure
-          - bytes downloaded
-          - time taken
-          - any interruptions
-        """
-        start = time.time()
         cmd = (
-            f"sudo ip netns exec {ns} wget -O /dev/null "
-            f"--timeout={self.timeout} {self.url}"
+            f"sudo ip netns exec {ns} timeout {self.timeout} wget -O /dev/null --no-cache {self.url}"
         )
 
-        logger.info(f"[START] {ns} downloading...")
-
+        start = time.time()
         result = await run_cmd(cmd)
 
         duration = time.time() - start
-        success = (result.returncode == 0)
+
+        success = (result["returncode"] == 0)
 
         results[ns] = {
             "success": success,
             "duration": duration,
             "interrupted": not success,
-            "stdout": result.stdout.decode("utf-8", errors="ignore"),
-            "stderr": result.stderr.decode("utf-8", errors="ignore"),
+            "stdout": result["stdout"],
+            "stderr": result["stderr"],
         }
 
         if success:

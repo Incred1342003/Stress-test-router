@@ -7,10 +7,9 @@ from utils.logger import logger
 def step_ping_clients(context):
     logger.info("------ PARALLEL CLIENT PING STARTED -----")
 
-    router_ip = context.config.get("router_ip")
     ping_duration = context.config.get("ping_duration")
 
-    pm = PingManager(router_ip, ping_duration)
+    pm = PingManager(context.router_ip, ping_duration)
 
     context.results = asyncio.run(
         pm.run_test([ns for ns in context.net_mgr.client_namespaces])
