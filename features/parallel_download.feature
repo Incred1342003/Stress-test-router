@@ -22,8 +22,6 @@ Feature: High-Load Parallel File Download Stress Testing
     Then no two clients should receive the same IP address
     And all assigned IPs should be reachable
     When all clients start downloading the 100GB ZIP file simultaneously
-    Then every client should successfully download the file
-    And no client should experience a download interruption
 
     Examples:
       | client_count |

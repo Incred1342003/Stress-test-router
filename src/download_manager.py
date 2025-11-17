@@ -23,7 +23,7 @@ class DownloadManager:
 
     async def worker(self, ns, results):
         cmd = (
-            f"sudo ip netns exec {ns} timeout {self.timeout} wget -O /dev/null --no-cache {self.url}"
+            f"sudo ip netns exec {ns} timeout {self.timeout} wget -q -O /dev/null -o /dev/null --limit-rate=1024M --no-cache {self.url}"
         )
 
         start = time.time()

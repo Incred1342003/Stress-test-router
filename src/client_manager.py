@@ -46,6 +46,7 @@ class NetworkManager:
                             f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
                         )
                     await run_cmd(f"sudo ip netns delete {ns}")
+                    await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
                 except subprocess.CalledProcessError as e:
                     logger.warning(f"Failed to delete {ns}: {e}")
         except subprocess.CalledProcessError as e:
@@ -72,6 +73,8 @@ class NetworkManager:
             for attempt in range(4):
                 if await self.wait_for_ip(ns, macvlan):
                     self.count+=1
+                    await run_cmd(f"sudo mkdir -p /etc/netns/{ns}")
+                    await run_cmd(f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf')
                     return
                 logger.warning(f"{ns} retrying IP acquisition ({attempt + 1}/4)...")
                 await asyncio.sleep(1)

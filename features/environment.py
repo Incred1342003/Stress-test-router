@@ -10,9 +10,11 @@ async def cleanup_namespace(ns):
     try:
         await run_cmd(
             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
-            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
+            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases "
         )
+
         await run_cmd(f"sudo ip netns delete {ns}")
+        await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
     except subprocess.CalledProcessError as e:
         logger.warning(f"Failed to delete {ns}: {e}")
 
@@ -48,6 +50,5 @@ def before_scenario(context, scenario):
 
 def after_all(context):
     logger.info("----- END CLEANING PROCESS STARTS -----")
-    time.sleep(30)
     cleanup()
     logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
