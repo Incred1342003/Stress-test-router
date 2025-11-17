@@ -1,7 +1,6 @@
 import re
 from behave import then
 from utils.logger import logger
-import ipaddress
 
 
 def extract_ip(output):

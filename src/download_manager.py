@@ -28,7 +28,12 @@ class DownloadManager:
         self.timeout = timeout
 
     async def worker(self, ns, results):
-        cmd = f"sudo ip netns exec {ns} timeout {self.timeout} wget -q -O /dev/null -o /dev/null --limit-rate=1024M --no-cache {self.url}"
+        cmd = (
+            f"sudo ip netns exec {ns} "
+            f"timeout {self.timeout} wget -q "
+            f"-O /dev/null -o /dev/null --limit-rate=1024M "
+            f"--no-cache {self.url}"
+        )
 
         start = time.time()
         result = await run_cmd(cmd)

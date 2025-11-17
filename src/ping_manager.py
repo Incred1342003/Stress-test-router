@@ -1,4 +1,3 @@
-import subprocess
 import asyncio
 import random
 import time

@@ -3,7 +3,6 @@ import asyncio
 import subprocess
 from utils.logger import logger
 from utils.command_runner import run_cmd
-import time
 
 
 async def cleanup_namespace(ns):

@@ -1,5 +1,5 @@
 import asyncio
-from behave import given, when, then
+from behave import when
 from utils.logger import logger
 from src.download_manager import DownloadManager
 
