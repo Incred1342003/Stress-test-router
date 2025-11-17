@@ -6,7 +6,7 @@ import ipaddress
 
 def extract_ip(output):
     """Extract IPv4 address from ip addr show."""
-    match = re.search(r'inet (\d+\.\d+\.\d+\.\d+)/', output)
+    match = re.search(r"inet (\d+\.\d+\.\d+\.\d+)/", output)
     return match.group(1) if match else None
 
 

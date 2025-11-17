@@ -5,6 +5,7 @@ from utils.logger import logger
 from utils.command_runner import run_cmd
 import time
 
+
 async def cleanup_namespace(ns):
     macvlan = f"macvlan{ns[2:]}"
     try:
@@ -30,8 +31,10 @@ async def async_cleanup():
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to list namespaces: {e}")
 
+
 def cleanup():
     asyncio.run(async_cleanup())
+
 
 def before_all(context):
     logger.info("----- STARTING NETWORK STRESS TEST -----")
@@ -43,10 +46,12 @@ def before_all(context):
 
     cleanup()
 
+
 def before_scenario(context, scenario):
     logger.info("----- BEFORE SCENARIO CLEANING PROCESS STARTS -----")
     cleanup()
     logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
+
 
 def after_all(context):
     logger.info("----- END CLEANING PROCESS STARTS -----")

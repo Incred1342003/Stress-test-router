@@ -4,11 +4,16 @@ import random
 import time
 from utils.logger import logger
 
+
 async def run_cmd(cmd, suppress_output=False):
     proc = await asyncio.create_subprocess_shell(
         cmd,
-        stdout=asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
+        stdout=(
+            asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
+        ),
+        stderr=(
+            asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
+        ),
     )
     stdout, stderr = await proc.communicate()
 
@@ -18,11 +23,11 @@ async def run_cmd(cmd, suppress_output=False):
         "stderr": None if suppress_output else stderr.decode(),
     }
 
+
 class PingManager:
     def __init__(self, target_ip, ping_duration):
         self.target_ip = target_ip
         self.duration = ping_duration
-
 
     async def worker(self, ns, end_time, results):
         success = True

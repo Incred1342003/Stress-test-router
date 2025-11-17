@@ -6,6 +6,7 @@ from unittest import SkipTest
 from utils.command_runner import run_cmd
 import shlex
 
+
 class NetworkManager:
     def __init__(self, interface):
         self.parent_if = interface
@@ -18,7 +19,9 @@ class NetworkManager:
         start = time.time()
         while time.time() - start < timeout:
             try:
-                output = await run_cmd(f"sudo ip netns exec {namespace} ip -4 addr show {interface}")
+                output = await run_cmd(
+                    f"sudo ip netns exec {namespace} ip -4 addr show {interface}"
+                )
                 if "inet " in output:
                     ip = output.split("inet ")[1].split()[0]
                     ip_only = ip.split("/")[0]
@@ -39,7 +42,9 @@ class NetworkManager:
             for ns in namespaces:
                 macvlan = f"macvlan{ns[2:]}"
                 try:
-                    output = await run_cmd(f"sudo ip netns exec {ns} ip -4 addr show {macvlan}")
+                    output = await run_cmd(
+                        f"sudo ip netns exec {ns} ip -4 addr show {macvlan}"
+                    )
                     if "inet " in output:
                         await run_cmd(
                             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
@@ -61,7 +66,9 @@ class NetworkManager:
 
         try:
             await run_cmd(f"sudo ip netns add {ns}")
-            await run_cmd(f"sudo ip link add link {self.parent_if} {macvlan} address {mac} type macvlan mode bridge")
+            await run_cmd(
+                f"sudo ip link add link {self.parent_if} {macvlan} address {mac} type macvlan mode bridge"
+            )
             await run_cmd(f"sudo ip link set {macvlan} netns {ns}")
             await run_cmd(f"sudo ip netns exec {ns} ip link set dev {macvlan} up")
             await run_cmd(f"sudo ip netns exec {ns} ip link set lo up")
@@ -72,9 +79,11 @@ class NetworkManager:
 
             for attempt in range(4):
                 if await self.wait_for_ip(ns, macvlan):
-                    self.count+=1
+                    self.count += 1
                     await run_cmd(f"sudo mkdir -p /etc/netns/{ns}")
-                    await run_cmd(f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf')
+                    await run_cmd(
+                        f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf'
+                    )
                     return
                 logger.warning(f"{ns} retrying IP acquisition ({attempt + 1}/4)...")
                 await asyncio.sleep(1)
@@ -90,7 +99,7 @@ class NetworkManager:
         await asyncio.gather(*tasks)
         logger.info(f"----- ONLY {self.count} / {count} got IP ------")
         self.count = 0
-        if(self.isFailed):
+        if self.isFailed:
             self.isFailed = False
             raise SkipTest("Skipping scenario due to failed client creation")
         logger.info(f"Created {count} namespaces successfully.")
@@ -98,16 +107,16 @@ class NetworkManager:
     def get_namespace_ip(self, ns):
         """Returns output of 'ip addr show' inside namespace."""
         cmd = f"sudo ip netns exec {ns} ip addr show"
-        result = subprocess.run(shlex.split(cmd),
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         return result.stdout.decode("utf-8")
 
     def ping_ip_from_ns(self, ns, ip):
         """Returns True/False based on ping output."""
 
         cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
-        result = subprocess.run(shlex.split(cmd),
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         return result.returncode == 0
