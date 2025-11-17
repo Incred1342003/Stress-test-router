@@ -38,5 +38,5 @@ jobs:
 
       - name: Run Behave Tests (Skip router/pi tests)
         run: |
-          behave --no-capture --tags="~@hardware"
+          behave --no-capture --tags=~@hardware
 
