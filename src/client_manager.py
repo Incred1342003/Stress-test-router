@@ -4,12 +4,11 @@ from utils.logger import logger
 import subprocess
 from unittest import SkipTest
 from utils.command_runner import run_cmd
-from utils.config_loader import load_config
+import shlex
 
 class NetworkManager:
-    def __init__(self):
-        config = load_config()
-        self.parent_if = config["network"]["parent_interface"]
+    def __init__(self, interface):
+        self.parent_if = interface
         self.client_namespaces = []
         self.client_ips = {}
         self.isFailed = False
@@ -22,7 +21,8 @@ class NetworkManager:
                 output = await run_cmd(f"sudo ip netns exec {namespace} ip -4 addr show {interface}")
                 if "inet " in output:
                     ip = output.split("inet ")[1].split()[0]
-                    logger.info(f"{namespace} got IP: {ip}")
+                    ip_only = ip.split("/")[0]
+                    logger.info(f"{namespace} got IP: {ip_only}")
                     self.client_ips[namespace] = ip
                     return True
             except subprocess.CalledProcessError:
@@ -46,6 +46,7 @@ class NetworkManager:
                             f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
                         )
                     await run_cmd(f"sudo ip netns delete {ns}")
+                    await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
                 except subprocess.CalledProcessError as e:
                     logger.warning(f"Failed to delete {ns}: {e}")
         except subprocess.CalledProcessError as e:
@@ -72,6 +73,8 @@ class NetworkManager:
             for attempt in range(4):
                 if await self.wait_for_ip(ns, macvlan):
                     self.count+=1
+                    await run_cmd(f"sudo mkdir -p /etc/netns/{ns}")
+                    await run_cmd(f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf')
                     return
                 logger.warning(f"{ns} retrying IP acquisition ({attempt + 1}/4)...")
                 await asyncio.sleep(1)
@@ -91,3 +94,20 @@ class NetworkManager:
             self.isFailed = False
             raise SkipTest("Skipping scenario due to failed client creation")
         logger.info(f"Created {count} namespaces successfully.")
+
+    def get_namespace_ip(self, ns):
+        """Returns output of 'ip addr show' inside namespace."""
+        cmd = f"sudo ip netns exec {ns} ip addr show"
+        result = subprocess.run(shlex.split(cmd),
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        return result.stdout.decode("utf-8")
+
+    def ping_ip_from_ns(self, ns, ip):
+        """Returns True/False based on ping output."""
+
+        cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
+        result = subprocess.run(shlex.split(cmd),
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        return result.returncode == 0

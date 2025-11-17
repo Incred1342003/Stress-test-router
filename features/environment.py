@@ -1,16 +1,20 @@
+import yaml
 import asyncio
 import subprocess
 from utils.logger import logger
 from utils.command_runner import run_cmd
+import time
 
 async def cleanup_namespace(ns):
     macvlan = f"macvlan{ns[2:]}"
     try:
         await run_cmd(
             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
-            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
+            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases "
         )
+
         await run_cmd(f"sudo ip netns delete {ns}")
+        await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
     except subprocess.CalledProcessError as e:
         logger.warning(f"Failed to delete {ns}: {e}")
 
@@ -31,6 +35,12 @@ def cleanup():
 
 def before_all(context):
     logger.info("----- STARTING NETWORK STRESS TEST -----")
+    logger.info("Loading configuration from config.yaml")
+
+    with open("config.yaml") as file:
+        context.config = yaml.safe_load(file)
+    logger.info("Configuration loaded successfully.")
+
     cleanup()
 
 def before_scenario(context, scenario):

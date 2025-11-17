@@ -1,4 +1,5 @@
-network:
-  parent_interface: eth0
-  router_ip: 192.168.1.1
-  ping_duration: 60
+router_ip: "192.168.1.1"
+interface: "eth0"
+ping_duration: 30
+download_url: "http://speedtest.tele2.net/100GB.zip"
+download_timeout: 10
