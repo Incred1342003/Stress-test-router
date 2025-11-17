@@ -16,7 +16,7 @@ Feature: High-Load Parallel File Download Stress Testing
     Given the base network interface is available on the system
     And a 100GB ZIP file URL is configured as the download source
 
-  @download @stress
+  @download @stress @hardware
   Scenario Outline: Validate parallel high-volume file downloads for multiple virtual clients
     Given I create <client_count> virtual clients using macvlan
     Then no two clients should receive the same IP address
@@ -26,3 +26,8 @@ Feature: High-Load Parallel File Download Stress Testing
     Examples:
       | client_count |
       | 5            |
+      | 10           |
+      | 20           |
+      | 50           |
+      | 100          |
+

@@ -8,7 +8,7 @@ Feature: Network Stress Testing Using Virtual Clients
     Given the router IP address is configured
     And the base network interface is available on the system
 
-  @stress_test
+  @stress_test @hardware
   Scenario: Create multiple virtual clients and verify connectivity
     Given I create 5 virtual clients using macvlan
     Then no two clients should receive the same IP address
@@ -17,7 +17,7 @@ Feature: Network Stress Testing Using Virtual Clients
     Then each client should successfully reach the router
     And the overall network connectivity should remain stable
 
-  @scalability
+  @scalability @hardware
   Scenario Outline: Stress test router with varying number of clients
     Given I create <client_count> virtual clients using macvlan
     Then no two clients should receive the same IP address

@@ -6,7 +6,7 @@ Feature: Internet Connectivity Testing Using Google DNS
   Background:
     Given the base network interface is available on the system
 
-  @internet
+  @internet @hardware
   Scenario: Verify that clients can reach Google DNS
     Given I create 5 virtual clients using macvlan
     Then no two clients should receive the same IP address
@@ -14,7 +14,7 @@ Feature: Internet Connectivity Testing Using Google DNS
     When all clients attempt to ping Google DNS
     Then each client should successfully reach the internet
 
-  @scalability
+  @scalability @hardware
   Scenario Outline: Pinging Google.com with varying number of clients
     Given I create <client_count> virtual clients using macvlan
     Then no two clients should receive the same IP address

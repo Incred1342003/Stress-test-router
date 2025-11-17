@@ -36,7 +36,7 @@ jobs:
           pip install flake8
           flake8 .
 
-      - name: Run Behave Tests
+      - name: Run Behave Tests (Skip router/pi tests)
         run: |
-          behave --no-capture
+          behave --no-capture --tags "not hardware"
 
