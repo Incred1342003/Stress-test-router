@@ -23,6 +23,7 @@ class PingManager:
         self.target_ip = target_ip
         self.duration = ping_duration
 
+
     async def worker(self, ns, end_time, results):
         success = True
 
