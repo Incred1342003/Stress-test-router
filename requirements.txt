@@ -1,2 +1,5 @@
 behave
 asyncio
+flake8
+black
+PyYAML
