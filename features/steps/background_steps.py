@@ -21,7 +21,7 @@ def step_interface_available(context):
     context.base_interface = interface
 
 
-@given("a 100GB ZIP file URL is configured as the download source")
+@given("a 20MB ZIP file URL is configured as the download source")
 def step_configure_file_url(context):
     context.download_url = context.config.get("download_url")
     assert context.download_url, "Download URL missing in config!"

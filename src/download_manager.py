@@ -31,7 +31,7 @@ class DownloadManager:
         cmd = (
             f"sudo ip netns exec {ns} "
             f"timeout {self.timeout} wget -q "
-            f"-O /dev/null -o /dev/null --limit-rate=1024M "
+            f"-O /dev/null -o /dev/null "
             f"--no-cache {self.url}"
         )
 
