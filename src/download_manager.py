@@ -1,6 +1,7 @@
 import asyncio
 import time
 from utils.logger import logger
+from utils.pi_health_check import health_worker
 
 
 async def run_cmd(cmd, suppress_output=False):
@@ -57,6 +58,16 @@ class DownloadManager:
 
     async def start_parallel_download(self, namespaces):
         results = {}
+
+        stop_event = asyncio.Event()
+
         tasks = [self.worker(ns, results) for ns in namespaces]
+
+        health_task = asyncio.create_task(health_worker(stop_event))
+
         await asyncio.gather(*tasks)
+
+        stop_event.set()
+        await health_task
+
         return results
