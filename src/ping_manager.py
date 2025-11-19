@@ -1,6 +1,7 @@
 import asyncio
 import random
 import time
+from utils.pi_health_check import health_worker
 from utils.logger import logger
 
 
@@ -38,7 +39,7 @@ class PingManager:
 
             if result["returncode"] != 0:
                 success = False
-                logger.error(f"[FAIL] {ns} cannot reach router {self.target_ip}")
+                logger.error(f"[FAIL] {ns} cannot reach {self.target_ip}")
 
             await asyncio.sleep(random.random() * 0.05)
 
@@ -48,6 +49,15 @@ class PingManager:
         end_time = time.time() + self.duration
         results = {}
 
-        tasks = [self.worker(ns, end_time, results) for ns in namespaces]
-        await asyncio.gather(*tasks)
+        stop_event = asyncio.Event()
+
+        ping_task = [self.worker(ns, end_time, results) for ns in namespaces]
+
+        health_task = asyncio.create_task(health_worker(stop_event))
+
+        await asyncio.gather(*ping_task)
+
+        stop_event.set()
+        await health_task
+
         return results

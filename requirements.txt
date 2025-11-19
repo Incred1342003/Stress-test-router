@@ -3,3 +3,4 @@ asyncio
 flake8
 black
 PyYAML
+psutil
