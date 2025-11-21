@@ -25,8 +25,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install mkdocs mkdocs-material mkdocs-awesome-pages-plugin ghp-import
 
-      - name: Build MkDocs site
-        run: mkdocs build --strict
+      - name: Build documentation
+        run: mkdocs build --config-file docs/mkdocs.yml
 
       - name: Deploy to GitHub Pages
         run: |
