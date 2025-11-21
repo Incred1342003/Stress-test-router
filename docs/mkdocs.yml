@@ -1,52 +1,49 @@
-site_name: Router Stress Testing Automation
+site_name: Router Stress Test Automation
 site_url: ""
-site_author: Your Name
-
 theme:
   name: material
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
+    - scheme: default
       primary: blue
       accent: indigo
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
       primary: blue
       accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
   features:
+    - navigation.top
     - navigation.tabs
-    - navigation.sections
-    - navigation.expand
     - content.code.copy
-    - search.highlight
-    - search.suggest
-    - toc.integrate
+    - content.tabs.link
 
 markdown_extensions:
   - admonition
-  - codehilite
   - toc:
       permalink: true
+  - codehilite
   - footnotes
-  - pymdownx.details
-  - pymdownx.superfences
-  - pymdownx.highlight
+  - tables
 
 nav:
   - Home: index.md
+
   - Getting Started:
-      - Project Overview: getting-started/overview.md
       - Raspberry Pi Setup: getting-started/pi-setup.md
       - Installation: getting-started/installation.md
+      - Architecture: getting-started/architecture.md
+
   - Usage Guide:
-      - Running Tests: usage/running-tests.md
       - Network Namespaces: usage/network-namespaces.md
       - Ping Manager: usage/ping-manager.md
       - Download Manager: usage/download-manager.md
-      - Health Monitor: usage/health-monitor.md
-  - Internals:
-      - Architecture: internals/architecture.md
-      - File Structure: internals/file-structure.md
+
   - Troubleshooting: troubleshooting.md
   - FAQ: faq.md
-  
+
+watch:
+  - docs
