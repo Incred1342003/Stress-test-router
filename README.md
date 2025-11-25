@@ -1,25 +1,65 @@
-## Stress-Test Router: High-Performance Router Stress-Testing Framework
+## Stress-Test Router
 
 Stress-Test Router is a tool for evaluating router performance by simulating numerous virtual clients using **Linux network namespaces** and **macvlan** technology, powered by an **async workload** on a **Raspberry Pi** with integrated health monitoring.
 
-<p align="center"> <img src="https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square" /> <img src="https://img.shields.io/badge/Docs-Available-blue?style=flat-square" /> <img src="https://img.shields.io/badge/Python-3.10%2B-yellow?style=flat-square" /> <img src="https://img.shields.io/badge/Platform-Raspberry%20Pi-red?style=flat-square" /> <img src="https://img.shields.io/github/license/panditpankaj21/Stress-test-router?style=flat-square" /> </p>
-
-## Full Documentation
-
-[Read Documentation](https://panditpankaj21.github.io/Stress-test-router/)
-
-## Table of Contents
-
-* [Overview](#-overview)
-* [Key Features](#-key-features)
-* [Architecture](#-architecture)
-* [Requirements](#-requirements)
-* [Installation](#-installation)
-* [Configuration](#-configuration)
-* [Running Tests](#-running-tests)
-* [Project Structure](#-project-structure)
-* [Contributing](#-contributing)
-* [License](#-license)
+<p > 
+    <a href="https://behave.readthedocs.io/en/stable/">
+        <img 
+            src="https://img.shields.io/badge/Behave-BDD%20Framework-green?style=flat-square" 
+            alt="Behave"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+    <a href="https://kernel.org/doc/html/latest/">
+        <img 
+            src="https://img.shields.io/badge/Linux-Kernel%20Docs-black?style=flat-square" 
+            alt="Linux"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+    <a href="https://man7.org/linux/man-pages/man7/network_namespaces.7.html">
+        <img 
+            src="https://img.shields.io/badge/Network%20Namespace-Isolation%20Tech-blue?style=flat-square" 
+            alt="Linux Network Namespace"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+    <a href="https://github.com/panditpankaj21/Stress-test-router/actions">
+        <img 
+            src="https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square" 
+            alt="CI Status"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+    <a href="https://github.com/panditpankaj21/Stress-test-router/tree/main/docs">
+        <img 
+            src="https://img.shields.io/badge/Docs-Available-blue?style=flat-square" 
+            alt="Documentation"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+    <a href="https://www.python.org/downloads/release/python-3100/">
+        <img 
+            src="https://img.shields.io/badge/Python-3.10%2B-yellow?style=flat-square" 
+            alt="Python Version"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+    <a href="https://www.raspberrypi.com/software/">
+        <img 
+            src="https://img.shields.io/badge/Platform-Raspberry%20Pi-red?style=flat-square" 
+            alt="Platform"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+    <a href="https://github.com/panditpankaj21/Stress-test-router/blob/main/LICENSE">
+        <img 
+            src="https://img.shields.io/github/license/panditpankaj21/Stress-test-router?style=flat-square" 
+            alt="License"
+            style="max-width: 100%; border-radius:3px"
+        />
+    </a>
+</p>
 
 
 ## Overview
@@ -41,63 +81,7 @@ This tool is useful for:
 * **Raspberry Pi network benchmarking**
 * **Automated network performance testing**
 
-## Key Features
-
-### Network Namespace Simulation
-
-* Automatically creates **N isolated clients** using **macvlan**.
-* Each client gets its own **network stack, IP, routing table, and DNS**.
-
-### DHCP & Router Validation
-
-* Ensures each namespace receives **IP dynamically**.
-* Validates router’s **DHCP performance** under load.
-
-### Parallel Tasks
-
-* **Concurrent ping tests**
-* **Concurrent download tests**
-* Fully **asynchronous** and optimized
-
-### Live Raspberry Pi Health Monitoring
-
-During ping/download tests, the system logs:
-
-* **CPU usage**
-* **Temperature**
-* **Memory usage**
-* **Disk usage**
-* **Load average**
-
-### Detailed Logging
-
-* Structured logs per namespace
-* Fail/success reporting
-* Duration measurement for each worker
-
-### Automated via Behave (BDD)
-
-* Clear scenario definitions
-* Easy to expand new test cases
-* CI supported
-
-## Requirements
-
-### Hardware
-
-* **Raspberry Pi** (3B+, 4, Zero 2W)
-* **Router** under test
-* **Ethernet** recommended (Wi-Fi also works)
-
-### Software
-
-* **Python 3.10+**
-* **Linux OS** (Raspberry Pi OS recommended)
-* **iproute2, dhclient, wget**
-
----
-
-## Installation
+## Quick Setup
 
 Clone the repository and install dependencies:
 
@@ -160,7 +144,3 @@ Please follow these steps:
 4.  Submit a **Pull Request**
 
 **CI checks must pass before merge.**
-
-## 📄 License
-
-This project is licensed under the **MIT License**.
