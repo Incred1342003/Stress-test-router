@@ -51,7 +51,7 @@ class NetworkManager:
                             f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
                         )
                         await run_cmd(
-                            f"sudo ip netns exec {ns} dhclient -6 -r {macvlan} -pf " 
+                            f"sudo ip netns exec {ns} dhclient -6 -r {macvlan} -pf "
                             f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases"
                         )
                     await run_cmd(f"sudo ip netns delete {ns}")

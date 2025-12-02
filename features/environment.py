@@ -27,7 +27,6 @@ async def cleanup_namespace(ns):
         logger.warning(f"Failed to clean up {ns}: {e}")
 
 
-
 async def async_cleanup():
     logger.info("----- ASYNC CLEANUP STARTED -----")
     try:
