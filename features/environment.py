@@ -33,16 +33,14 @@ async def async_cleanup():
     logger.info("----- ASYNC CLEANUP STARTED -----")
     try:
         output = await run_cmd("sudo ip netns list")
-        namespaces = [
-            line.split()[0] for line in output.splitlines() if line
-        ]
+        namespaces = [line.split()[0] for line in output.splitlines() if line]
         tasks = [cleanup_namespace(ns) for ns in namespaces]
         await asyncio.gather(*tasks)
         logger.info("All clients deleted successfully.")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to list namespaces: {e}")
 
-.gitignore
+
 def cleanup():
     asyncio.run(async_cleanup())
 
