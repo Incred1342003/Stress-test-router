@@ -3,20 +3,29 @@ import asyncio
 import subprocess
 from utils.logger import logger
 from utils.command_runner import run_cmd
+import time
 
 
 async def cleanup_namespace(ns):
     macvlan = f"macvlan{ns[2:]}"
     try:
         await run_cmd(
+            f"sudo ip netns exec {ns} dhclient -6 -r {macvlan} "
+            f"-pf /run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases"
+        )
+
+        await run_cmd(
             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
-            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases "
+            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
         )
 
         await run_cmd(f"sudo ip netns delete {ns}")
+
         await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
+
     except subprocess.CalledProcessError as e:
-        logger.warning(f"Failed to delete {ns}: {e}")
+        logger.warning(f"Failed to clean up {ns}: {e}")
+
 
 
 async def async_cleanup():

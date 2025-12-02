@@ -50,6 +50,10 @@ class NetworkManager:
                             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
                             f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
                         )
+                        await run_cmd(
+                            f"sudo ip netns exec {ns} dhclient -6 -r {macvlan} -pf " 
+                            f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases"
+                        )
                     await run_cmd(f"sudo ip netns delete {ns}")
                     await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
                 except subprocess.CalledProcessError as e:
@@ -61,7 +65,7 @@ class NetworkManager:
     async def create_client(self, i):
         ns = f"ns{i}"
         macvlan = f"macvlan{i}"
-        mac = f"00:1A:79:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
+        mac = f"00:1A:80:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
         self.client_namespaces.append(ns)
 
         try:
@@ -81,6 +85,11 @@ class NetworkManager:
                 if await self.wait_for_ip(ns, macvlan):
                     self.count += 1
                     await run_cmd(f"sudo mkdir -p /etc/netns/{ns}")
+                    await run_cmd(
+                        f"sudo ip netns exec {ns} dhclient -6 -v {macvlan} -pf "
+                        f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases &"
+                    )
+
                     await run_cmd(
                         f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf'
                     )
