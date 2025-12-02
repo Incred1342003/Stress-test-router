@@ -11,12 +11,14 @@ async def cleanup_namespace(ns):
     try:
         await run_cmd(
             f"sudo ip netns exec {ns} dhclient -6 -r {macvlan} "
-            f"-pf /run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases"
+            f"-pf /run/dhclient6-{ns}.pid "
+            f"-lf /var/lib/dhcp/dhclient6-{ns}.leases"
         )
 
         await run_cmd(
             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
-            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
+            f"-pf /run/dhclient-{ns}.pid "
+            f"-lf /var/lib/dhcp/dhclient-{ns}.leases"
         )
 
         await run_cmd(f"sudo ip netns delete {ns}")
@@ -31,14 +33,16 @@ async def async_cleanup():
     logger.info("----- ASYNC CLEANUP STARTED -----")
     try:
         output = await run_cmd("sudo ip netns list")
-        namespaces = [line.split()[0] for line in output.splitlines() if line]
+        namespaces = [
+            line.split()[0] for line in output.splitlines() if line
+        ]
         tasks = [cleanup_namespace(ns) for ns in namespaces]
         await asyncio.gather(*tasks)
         logger.info("All clients deleted successfully.")
     except subprocess.CalledProcessError as e:
         logger.error(f"Failed to list namespaces: {e}")
 
-
+.gitignore
 def cleanup():
     asyncio.run(async_cleanup())
 
