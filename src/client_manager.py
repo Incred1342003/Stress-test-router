@@ -11,25 +11,38 @@ class NetworkManager:
     def __init__(self, interface):
         self.parent_if = interface
         self.client_namespaces = []
+        # Store both IPv4 and IPv6 per namespace
         self.client_ips = {}
         self.isFailed = False
         self.count = 0
 
     async def wait_for_ip(self, namespace, interface, timeout=2):
         start = time.time()
+        ip_v4, ip_v6 = None, None
+
         while time.time() - start < timeout:
             try:
-                output = await run_cmd(
+                output_v4 = await run_cmd(
                     f"sudo ip netns exec {namespace} ip -4 addr show {interface}"
                 )
-                if "inet " in output:
-                    ip = output.split("inet ")[1].split()[0]
-                    ip_only = ip.split("/")[0]
-                    logger.info(f"{namespace} got IP: {ip_only}")
-                    self.client_ips[namespace] = ip
+                if "inet " in output_v4:
+                    ip_v4 = output_v4.split("inet ")[1].split()[0]
+                    self.client_ips.setdefault(namespace, {})["ipv4"] = ip_v4
+                    
+                output_v6 = await run_cmd(
+                    f"sudo ip netns exec {namespace} ip -6 addr show {interface}"
+                )
+                if "inet6 " in output_v6:
+                    ip_v6 = output_v6.split("inet6 ")[1].split()[0]
+                    self.client_ips.setdefault(namespace, {})["ipv6"] = ip_v6
+
+                if ip_v4 or ip_v6:
+                    logger.info(f"{namespace} got IPv4: {ip_v4.split('/')[0]} and {ip_v6.split('/')[0]}")
                     return True
+
             except subprocess.CalledProcessError:
                 await asyncio.sleep(0.5)
+
         logger.warning(f"{namespace} did not get IP within {timeout}s.")
         return False
 
@@ -123,7 +136,6 @@ class NetworkManager:
 
     def ping_ip_from_ns(self, ns, ip):
         """Returns True/False based on ping output."""
-
         cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
         result = subprocess.run(
             shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE

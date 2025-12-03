@@ -1,5 +1,12 @@
-router_ip: "192.168.1.1"
-interface: "eth0"
-ping_duration: 30
-download_url: "http://speedtest.tele2.net/20MB.zip"
-download_timeout: 30
+router_ip: "192.168.1.1"   # IPv4 router address
+interface: "eth0"                        # host interface
+ping_duration: 10                        # how long to run ping tests
+download_url: "http://speedtest.tele2.net/10MB.zip"   # stress test file
+download_timeout: 60                     # timeout for download
+video_ids:                               # YouTube IDs for randomized streaming
+  - dQw4w9WgXcQ   # Rick Astley
+  - M7FIvfx5J10   # OK Go
+  - 3JZ_D3ELwOQ   # Uptown Funk
+  - L_jWHffIx5E   # Smash Mouth
+  - kJQP7kiw5Fk   # Despacito
+video_duration: 45                       # seconds (this is the ONLY place duration is controlled)
