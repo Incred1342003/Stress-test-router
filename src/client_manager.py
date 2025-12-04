@@ -11,38 +11,25 @@ class NetworkManager:
     def __init__(self, interface):
         self.parent_if = interface
         self.client_namespaces = []
-        # Store both IPv4 and IPv6 per namespace
         self.client_ips = {}
         self.isFailed = False
         self.count = 0
 
     async def wait_for_ip(self, namespace, interface, timeout=2):
         start = time.time()
-        ip_v4, ip_v6 = None, None
-
         while time.time() - start < timeout:
             try:
-                output_v4 = await run_cmd(
+                output = await run_cmd(
                     f"sudo ip netns exec {namespace} ip -4 addr show {interface}"
                 )
-                if "inet " in output_v4:
-                    ip_v4 = output_v4.split("inet ")[1].split()[0]
-                    self.client_ips.setdefault(namespace, {})["ipv4"] = ip_v4
-                    
-                output_v6 = await run_cmd(
-                    f"sudo ip netns exec {namespace} ip -6 addr show {interface}"
-                )
-                if "inet6 " in output_v6:
-                    ip_v6 = output_v6.split("inet6 ")[1].split()[0]
-                    self.client_ips.setdefault(namespace, {})["ipv6"] = ip_v6
-
-                if ip_v4 or ip_v6:
-                    logger.info(f"{namespace} got IPv4: {ip_v4.split('/')[0]} and {ip_v6.split('/')[0]}")
+                if "inet " in output:
+                    ip = output.split("inet ")[1].split()[0]
+                    ip_only = ip.split("/")[0]
+                    logger.info(f"{namespace} got IP: {ip_only}")
+                    self.client_ips[namespace] = ip
                     return True
-
             except subprocess.CalledProcessError:
                 await asyncio.sleep(0.5)
-
         logger.warning(f"{namespace} did not get IP within {timeout}s.")
         return False
 
@@ -63,10 +50,6 @@ class NetworkManager:
                             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
                             f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
                         )
-                        await run_cmd(
-                            f"sudo ip netns exec {ns} dhclient -6 -r {macvlan} -pf "
-                            f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases"
-                        )
                     await run_cmd(f"sudo ip netns delete {ns}")
                     await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
                 except subprocess.CalledProcessError as e:
@@ -78,7 +61,7 @@ class NetworkManager:
     async def create_client(self, i):
         ns = f"ns{i}"
         macvlan = f"macvlan{i}"
-        mac = f"00:1A:80:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
+        mac = f"00:1A:79:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
         self.client_namespaces.append(ns)
 
         try:
@@ -98,11 +81,6 @@ class NetworkManager:
                 if await self.wait_for_ip(ns, macvlan):
                     self.count += 1
                     await run_cmd(f"sudo mkdir -p /etc/netns/{ns}")
-                    await run_cmd(
-                        f"sudo ip netns exec {ns} dhclient -6 -v {macvlan} -pf "
-                        f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases &"
-                    )
-
                     await run_cmd(
                         f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf'
                     )
@@ -136,6 +114,7 @@ class NetworkManager:
 
     def ping_ip_from_ns(self, ns, ip):
         """Returns True/False based on ping output."""
+
         cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
         result = subprocess.run(
             shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
