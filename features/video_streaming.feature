@@ -9,11 +9,11 @@ Feature: High-Load Video Streaming Stress Test
   @video @stress @hardware
   Scenario Outline: Stream video on multiple clients simultaneously
     Given I create <client_count> virtual clients using macvlan
-    Then no two clients should receive duplicate IP addresses (IPv4 or IPv6)
-    And all assigned IPv4 and IPv6 addresses should be reachable
+    Then no two clients should receive the same IP address
+    And all assigned IPs should be reachable
     When all clients start streaming a video simultaneously
     Then each client should successfully stream for the given duration
 
     Examples:
       | client_count |
-      |  20          |
+      | 20           |

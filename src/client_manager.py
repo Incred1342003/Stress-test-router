@@ -19,17 +19,36 @@ class NetworkManager:
         start = time.time()
         while time.time() - start < timeout:
             try:
-                output = await run_cmd(
+                # Check IPv4
+                output_v4 = await run_cmd(
                     f"sudo ip netns exec {namespace} ip -4 addr show {interface}"
                 )
-                if "inet " in output:
-                    ip = output.split("inet ")[1].split()[0]
-                    ip_only = ip.split("/")[0]
-                    logger.info(f"{namespace} got IP: {ip_only}")
-                    self.client_ips[namespace] = ip
+                ip_v4 = None
+                if "inet " in output_v4:
+                    ip_v4 = output_v4.split("inet ")[1].split()[0]
+                    ip_v4_only = ip_v4.split("/")[0]
+                    # Store IPv4 for all features
+                    self.client_ips[namespace] = ip_v4
+
+                # Check IPv6 (for logging only)
+                output_v6 = await run_cmd(
+                    f"sudo ip netns exec {namespace} ip -6 addr show {interface}"
+                )
+                ip_v6_only = "none"
+                if "inet6 " in output_v6:
+                    ip_v6 = output_v6.split("inet6 ")[1].split()[0]
+                    ip_v6_only = ip_v6.split("/")[0]
+
+                # If IPv4 was acquired, log both IPv4 and IPv6
+                if ip_v4:
+                    logger.info(
+                        f"{namespace} got IPv4: {ip_v4_only} and IPv6: {ip_v6_only}"
+                    )
                     return True
+
             except subprocess.CalledProcessError:
                 await asyncio.sleep(0.5)
+
         logger.warning(f"{namespace} did not get IP within {timeout}s.")
         return False
 
@@ -114,7 +133,6 @@ class NetworkManager:
 
     def ping_ip_from_ns(self, ns, ip):
         """Returns True/False based on ping output."""
-
         cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
         result = subprocess.run(
             shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
