@@ -5,9 +5,11 @@ from utils.logger import logger
 import asyncio
 import yaml
 
+
 def load_config():
     with open("config.yaml") as f:
         return yaml.safe_load(f)
+
 
 @given('I launch 10 clients using the selected topology')
 def step_launch_clients(context):
@@ -24,6 +26,7 @@ def step_launch_clients(context):
 
     asyncio.run(create())
     logger.info("STATUS: Clients successfully created and assigned IP addresses.")
+
 
 @when('all clients ping the router in parallel')
 def step_ping_parallel(context):
