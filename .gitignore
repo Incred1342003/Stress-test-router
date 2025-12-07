@@ -2,5 +2,4 @@
 src/__pycache__
 utils/__pycache__
 __pycache__
-.venv.vscode/
-ci-trigger.txt
+.venv
