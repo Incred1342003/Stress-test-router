@@ -2,6 +2,8 @@ import psutil
 import os
 import asyncio
 from utils.logger import logger
+
+
 async def get_pi_health():
     cpu_usage = psutil.cpu_percent(interval=0.1)
     try:
@@ -19,6 +21,8 @@ async def get_pi_health():
         "disk": disk,
         "load": load1,
     }
+
+
 async def health_worker(stop_event):
     while not stop_event.is_set():
         data = await get_pi_health()

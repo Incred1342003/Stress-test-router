@@ -4,10 +4,13 @@ import subprocess
 from utils.logger import logger
 from utils.pi_health_check import health_worker
 from utils.command_runner import run_cmd
+
+
 class VideoManager:
     def __init__(self, video_ids: list[str], duration: int):
         self.video_ids = video_ids
         self.duration = duration
+
     async def _stream_with_mpv(self, ns: str, video_id: str) -> dict:
         url = f"https://www.youtube.com/watch?v={video_id}"
         cmd = (
@@ -39,6 +42,7 @@ class VideoManager:
         else:
             logger.error(f"[FAIL] {ns} failed ({elapsed:.2f}s)")
         return result
+
     async def start_parallel_streaming(self, namespaces: list[str]) -> dict:
         stop_event = asyncio.Event()
         health_task = asyncio.create_task(health_worker(stop_event))

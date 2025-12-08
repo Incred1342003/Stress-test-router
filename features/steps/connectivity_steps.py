@@ -2,6 +2,8 @@ import asyncio
 from behave import when, then
 from src.ping_manager import PingManager
 from utils.logger import logger
+
+
 @when("all clients attempt to ping the router simultaneously")
 def step_ping_clients(context):
     logger.info("------ PARALLEL CLIENT PING STARTED -----")
@@ -11,11 +13,15 @@ def step_ping_clients(context):
         pm.run_test([ns for ns in context.net_mgr.client_namespaces])
     )
     logger.info("----- STOPPED PING -----")
+
+
 @then("each client should successfully reach the router")
 def step_validate_client_connectivity(context):
     failed = [ns for ns, success in context.results.items() if not success]
     assert len(failed) == 0, f"Clients failed to reach router: {', '.join(failed)}"
     logger.info("All clients successfully reached the router.")
+
+
 @then("the overall network connectivity should remain stable")
 def step_network_stability(context):
     total_clients = len(context.results)

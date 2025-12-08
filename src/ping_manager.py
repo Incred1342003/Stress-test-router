@@ -3,6 +3,8 @@ import random
 import time
 from utils.pi_health_check import health_worker
 from utils.logger import logger
+
+
 async def run_cmd(cmd, suppress_output=False):
     proc = await asyncio.create_subprocess_shell(
         cmd,
@@ -19,10 +21,13 @@ async def run_cmd(cmd, suppress_output=False):
         "stdout": None if suppress_output else stdout.decode(),
         "stderr": None if suppress_output else stderr.decode(),
     }
+
+
 class PingManager:
     def __init__(self, target_ip, ping_duration):
         self.target_ip = target_ip
         self.duration = ping_duration
+
     async def worker(self, ns, end_time, results):
         success = True
         while time.time() < end_time:
@@ -34,6 +39,7 @@ class PingManager:
                 logger.error(f"[FAIL] {ns} cannot reach {self.target_ip}")
             await asyncio.sleep(random.random() * 0.05)
         results[ns] = success
+
     async def run_test(self, namespaces):
         end_time = time.time() + self.duration
         results = {}

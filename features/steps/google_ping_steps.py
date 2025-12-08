@@ -2,6 +2,8 @@ import asyncio
 from behave import when, then
 from src.ping_manager import PingManager
 from utils.logger import logger
+
+
 @when("all clients attempt to ping Google DNS")
 def step_ping_google(context):
     logger.info("------ PARALLEL CLIENT PING TO GOOGLE DNS STARTED -----")
@@ -12,6 +14,8 @@ def step_ping_google(context):
         pm.run_test([ns for ns in context.net_mgr.client_namespaces])
     )
     logger.info("----- STOPPED PING TO GOOGLE DNS -----")
+
+
 @then("each client should successfully reach the internet")
 def step_validate_ping(context):
     failed = [ns for ns, success in context.results.items() if not success]

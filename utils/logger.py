@@ -1,5 +1,6 @@
 import logging
 import os
+
 LOG_FILE = "network_stress_report.log"
 logging.basicConfig(
     level=logging.INFO,

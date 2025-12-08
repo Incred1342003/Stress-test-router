@@ -2,6 +2,8 @@ import asyncio
 from behave import when, then
 from utils.logger import logger
 from src.video_manager import VideoManager
+
+
 @when("all clients start streaming a video simultaneously")
 def step_start_video_streaming(context):
     logger.info("----- PARALLEL VIDEO STREAMING (MPV) STARTED -----")
@@ -13,6 +15,8 @@ def step_start_video_streaming(context):
         vm.start_parallel_streaming(context.net_mgr.client_namespaces)
     )
     logger.info("----- PARALLEL VIDEO STREAMING ENDED -----")
+
+
 @then("each client should successfully stream for the given duration")
 def step_validate_video_streaming(context):
     failed = [ns for ns, data in context.video_results.items() if not data["success"]]
