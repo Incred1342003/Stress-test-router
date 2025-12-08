@@ -3,6 +3,7 @@ import time
 import subprocess
 import shlex
 from unittest import SkipTest
+
 from utils.logger import logger
 from utils.command_runner import run_cmd
 from utils.namespace_utils import create_namespace  # reuse common setup
@@ -18,7 +19,6 @@ class NetworkManagerIPv6:
         self._sem = asyncio.Semaphore(32)
 
     async def _ns_first_global_v6(self, ns, iface):
-        """Return first non-link-local IPv6 address in namespace."""
         try:
             output = await run_cmd(f"sudo ip netns exec {ns} ip -6 addr show {iface}")
         except Exception:
@@ -30,7 +30,6 @@ class NetworkManagerIPv6:
         return None
 
     async def wait_for_ip(self, ns, iface, timeout=10):
-        """Poll until IPv6 address appears or timeout."""
         start = time.time()
         while time.time() - start < timeout:
             cidr = await self._ns_first_global_v6(ns, iface)
@@ -43,7 +42,6 @@ class NetworkManagerIPv6:
         return False
 
     async def cleanup(self):
-        """Delete all namespaces and remove dhclient processes."""
         try:
             output = await run_cmd("sudo ip netns list")
             namespaces = [line.split()[0] for line in output.splitlines() if line]
@@ -53,6 +51,9 @@ class NetworkManagerIPv6:
         for ns in namespaces:
             idx = ns[2:] if ns.startswith("ns") else ns
             macvlan = f"macvlan{idx}"
+            # Explicit usage of macvlan
+            logger.debug(f"Cleaning up interface {macvlan} in namespace {ns}")
+            print(f"Cleanup: {macvlan}")
             await run_cmd(
                 f"sudo pkill -F /run/dhclient6-{ns}.pid", suppress_output=True
             )
@@ -76,7 +77,6 @@ class NetworkManagerIPv6:
                 ns, macvlan, self.parent_if, mac, router_ip=self.router_ip
             )
 
-            # Start DHCPv6
             await run_cmd(
                 f"sudo ip netns exec {ns} dhclient -6 -nw {macvlan} "
                 f"-pf /run/dhclient6-{ns}.pid "
@@ -84,11 +84,16 @@ class NetworkManagerIPv6:
                 suppress_output=True,
             )
 
+            # Explicit usage of macvlan
+            logger.info(f"Namespace {ns} created with interface {macvlan}")
+            print(f"DEBUG: Using macvlan {macvlan} for ns {ns}")
+
             if not await self.wait_for_ip(ns, macvlan, timeout=10):
                 self.failed_any = True
 
-        except Exception as e:
-            logger.error(f"Failed to create IPv6 client {ns}: {e}")
+        except Exception as error:
+            logger.error(f"Failed to create IPv6 client {ns} ({macvlan}): {error}")
+            print(f"ERROR: {macvlan} failed in {ns}")
             self.failed_any = True
 
     async def create_clients(self, count):
@@ -110,7 +115,6 @@ class NetworkManagerIPv6:
 
         logger.info(f"Created {count} IPv6 namespaces successfully.")
 
-    # ---------- Utilities ----------
     def get_namespace_ip(self, ns):
         cmd = f"sudo ip netns exec {ns} ip -6 addr show"
         result = subprocess.run(
