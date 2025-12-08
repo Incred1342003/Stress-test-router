@@ -5,8 +5,6 @@ import subprocess
 from unittest import SkipTest
 from utils.command_runner import run_cmd
 import shlex
-
-
 class NetworkManager:
     def __init__(self, interface):
         self.parent_if = interface
@@ -14,12 +12,10 @@ class NetworkManager:
         self.client_ips = {}
         self.isFailed = False
         self.count = 0
-
     async def wait_for_ip(self, namespace, interface, timeout=2):
         start = time.time()
         while time.time() - start < timeout:
             try:
-                # Check IPv4
                 output_v4 = await run_cmd(
                     f"sudo ip netns exec {namespace} ip -4 addr show {interface}"
                 )
@@ -27,10 +23,7 @@ class NetworkManager:
                 if "inet " in output_v4:
                     ip_v4 = output_v4.split("inet ")[1].split()[0]
                     ip_v4_only = ip_v4.split("/")[0]
-                    # Store IPv4 for all features
                     self.client_ips[namespace] = ip_v4
-
-                # Check IPv6 (for logging only)
                 output_v6 = await run_cmd(
                     f"sudo ip netns exec {namespace} ip -6 addr show {interface}"
                 )
@@ -38,26 +31,20 @@ class NetworkManager:
                 if "inet6 " in output_v6:
                     ip_v6 = output_v6.split("inet6 ")[1].split()[0]
                     ip_v6_only = ip_v6.split("/")[0]
-
-                # If IPv4 was acquired, log both IPv4 and IPv6
                 if ip_v4:
                     logger.info(
                         f"{namespace} got IPv4: {ip_v4_only} and IPv6: {ip_v6_only}"
                     )
                     return True
-
             except subprocess.CalledProcessError:
                 await asyncio.sleep(0.5)
-
         logger.warning(f"{namespace} did not get IP within {timeout}s.")
         return False
-
     async def cleanup(self):
         logger.info("----- IP is Not Alloated to some client, Aborting -----")
         try:
             output = await run_cmd("sudo ip netns list")
             namespaces = [line.split()[0] for line in output.splitlines() if line]
-
             for ns in namespaces:
                 macvlan = f"macvlan{ns[2:]}"
                 try:
@@ -80,13 +67,11 @@ class NetworkManager:
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to list namespaces: {e}")
         logger.info("All client deleted Successfully that was created")
-
     async def create_client(self, i):
         ns = f"ns{i}"
         macvlan = f"macvlan{i}"
         mac = f"00:1A:80:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
         self.client_namespaces.append(ns)
-
         try:
             await run_cmd(f"sudo ip netns add {ns}")
             await run_cmd(
@@ -99,7 +84,6 @@ class NetworkManager:
                 f"sudo ip netns exec {ns} dhclient -v {macvlan} "
                 f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases &"
             )
-
             for attempt in range(4):
                 if await self.wait_for_ip(ns, macvlan):
                     self.count += 1
@@ -114,13 +98,10 @@ class NetworkManager:
                     return
                 logger.warning(f"{ns} retrying IP acquisition ({attempt + 1}/4)...")
                 await asyncio.sleep(1)
-
             self.isFailed = True
-
         except subprocess.CalledProcessError as e:
             logger.error(f"Failed to create {ns}: {e}")
             self.isFailed = True
-
     async def create_clients(self, count):
         tasks = [self.create_client(i) for i in range(1, count + 1)]
         await asyncio.gather(*tasks)
@@ -130,7 +111,6 @@ class NetworkManager:
             self.isFailed = False
             raise SkipTest("Skipping scenario due to failed client creation")
         logger.info(f"Created {count} namespaces successfully.")
-
     def get_namespace_ip(self, ns):
         """Returns output of 'ip addr show' inside namespace."""
         cmd = f"sudo ip netns exec {ns} ip addr show"
@@ -138,7 +118,6 @@ class NetworkManager:
             shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         return result.stdout.decode("utf-8")
-
     def ping_ip_from_ns(self, ns, ip):
         """Returns True/False based on ping output."""
         cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
