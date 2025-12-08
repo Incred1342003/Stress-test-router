@@ -13,11 +13,8 @@ def step_router_ip_configured(context):
 def step_interface_available(context):
     interface = context.config.get("interface")
     assert interface is not None, "Interface is not specified in the configuration."
-
-    # Check if the interface exists on the system
     result = os.system(f"ip link show {interface} > /dev/null 2>&1")
     assert result == 0, f"Network interface {interface} is not available on the system."
-
     context.base_interface = interface
 
 
