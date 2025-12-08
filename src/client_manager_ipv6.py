@@ -7,6 +7,7 @@ from utils.logger import logger
 from utils.command_runner import run_cmd
 from utils.namespace_utils import create_namespace  # reuse common setup
 
+
 class NetworkManagerIPv6:
     def __init__(self, interface="eth0", router_ip=None):
         self.parent_if = interface
@@ -52,11 +53,15 @@ class NetworkManagerIPv6:
         for ns in namespaces:
             idx = ns[2:] if ns.startswith("ns") else ns
             macvlan = f"macvlan{idx}"
-            await run_cmd(f"sudo pkill -F /run/dhclient6-{ns}.pid", suppress_output=True)
+            await run_cmd(
+                f"sudo pkill -F /run/dhclient6-{ns}.pid", suppress_output=True
+            )
             await run_cmd(f"sudo ip netns delete {ns}", suppress_output=True)
             await run_cmd(f"sudo rm -rf /etc/netns/{ns}", suppress_output=True)
 
-        await run_cmd("sudo rm -f /var/lib/dhcp/dhclient6-*.leases", suppress_output=True)
+        await run_cmd(
+            "sudo rm -f /var/lib/dhcp/dhclient6-*.leases", suppress_output=True
+        )
         await run_cmd("sudo rm -f /run/dhclient6-*.pid", suppress_output=True)
         logger.info("All IPv6 clients deleted successfully.")
 
@@ -67,7 +72,9 @@ class NetworkManagerIPv6:
 
         try:
             mac = f"00:1A:79:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
-            await create_namespace(ns, macvlan, self.parent_if, mac, router_ip=self.router_ip)
+            await create_namespace(
+                ns, macvlan, self.parent_if, mac, router_ip=self.router_ip
+            )
 
             # Start DHCPv6
             await run_cmd(
@@ -86,6 +93,7 @@ class NetworkManagerIPv6:
 
     async def create_clients(self, count):
         logger.info("Starting parallel IPv6 client creation...")
+
         async def wrapped(i):
             async with self._sem:
                 await self.create_client(i)
@@ -105,11 +113,15 @@ class NetworkManagerIPv6:
     # ---------- Utilities ----------
     def get_namespace_ip(self, ns):
         cmd = f"sudo ip netns exec {ns} ip -6 addr show"
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         return result.stdout.decode("utf-8")
 
     def ping_ip_from_ns(self, ns, ip):
         iface = f"macvlan{ns[2:]}"
         cmd = f"sudo ip netns exec {ns} ping6 -c 1 -W 1 -I {iface} {ip}"
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         return result.returncode == 0
