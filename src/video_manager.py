@@ -1,9 +1,25 @@
 import asyncio
-import time
 import subprocess
 from utils.logger import logger
 from utils.pi_health_check import health_worker
-from utils.command_runner import run_cmd
+
+
+async def run_cmd(cmd, suppress_output=False):
+    proc = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=(
+            asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
+        ),
+        stderr=(
+            asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
+        ),
+    )
+    stdout, stderr = await proc.communicate()
+    return {
+        "returncode": proc.returncode,
+        "stdout": None if suppress_output else stdout.decode(),
+        "stderr": None if suppress_output else stderr.decode(),
+    }
 
 
 class VideoManager:
@@ -20,36 +36,19 @@ class VideoManager:
             f"--ao=null --vo=null --no-terminal --no-cache "
             f"{url}"
         )
-        start_ts = time.time()
-        success = False
+
         try:
-            await run_cmd(cmd, suppress_output=True)
-            success = True
+            await run_cmd(cmd)
         except subprocess.CalledProcessError as e:
-            if e.returncode in (124, 143):  # timeout exit codes
-                success = True
-            else:
-                logger.error(f"[ERROR] {ns} mpv crashed with code {e.returncode}")
-        except Exception as e:
-            logger.error(f"[ERROR] {ns} mpv exception: {e}")
-        elapsed = time.time() - start_ts
-        if elapsed < (self.duration * 0.9):
-            success = False
-            logger.warning(f"{ns} stopped early ({elapsed:.2f}s / {self.duration}s)")
-        result = {"success": success, "duration": elapsed}
-        if success:
-            logger.info(f"[OK] {ns} streamed {video_id} for {elapsed:.2f}s")
-        else:
-            logger.error(f"[FAIL] {ns} failed ({elapsed:.2f}s)")
-        return result
+            logger.error(f"[ERROR] {ns} mpv crashed with code {e.returncode}")
 
     async def start_parallel_streaming(self, namespaces: list[str]) -> dict:
         stop_event = asyncio.Event()
-        health_task = asyncio.create_task(health_worker(stop_event))
         tasks = [
             self._stream_with_mpv(ns, self.video_ids[i % len(self.video_ids)])
             for i, ns in enumerate(namespaces)
         ]
+        health_task = asyncio.create_task(health_worker(stop_event))
         results_list = await asyncio.gather(*tasks)
         stop_event.set()
         await health_task
