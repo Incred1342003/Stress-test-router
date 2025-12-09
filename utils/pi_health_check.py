@@ -31,4 +31,4 @@ async def health_worker(stop_event):
             f"[PI HEALTH] CPU={data['cpu']}% | Temp={temp_str} | "
             f"RAM={data['ram']}% | Disk={data['disk']}% | Load={data['load']}"
         )
-        await asyncio.sleep(3)
+        await asyncio.sleep(5)
