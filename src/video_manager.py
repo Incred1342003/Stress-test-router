@@ -1,5 +1,4 @@
 import asyncio
-import time
 import subprocess
 from utils.logger import logger
 from utils.pi_health_check import health_worker
@@ -22,6 +21,7 @@ async def run_cmd(cmd, suppress_output=False):
         "stderr": None if suppress_output else stderr.decode(),
     }
 
+
 class VideoManager:
     def __init__(self, video_ids: list[str], duration: int):
         self.video_ids = video_ids
@@ -36,10 +36,9 @@ class VideoManager:
             f"--ao=null --vo=null --no-terminal --no-cache "
             f"{url}"
         )
-        success = False
+
         try:
             await run_cmd(cmd)
-            success = True
         except subprocess.CalledProcessError as e:
             logger.error(f"[ERROR] {ns} mpv crashed with code {e.returncode}")
 
