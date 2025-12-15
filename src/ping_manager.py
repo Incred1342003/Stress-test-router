@@ -26,70 +26,15 @@ async def run_cmd(cmd, suppress_output=False):
     }
 
 
-async def get_router_health(host, username, password, stop_event):
+async def get_router_health(router_ssh, host, username, password, stop_event):
     while not stop_event.is_set():
-        try:
-            ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(host, username=username, password=password, timeout=10)
-
-            # Run all commands in one exec so Dropbear doesn't close the channel
-            commands = "top -bn1 | head -5; cat /proc/loadavg; free -m; df -h /"
-            stdin, stdout, stderr = ssh.exec_command(commands)
-            output = stdout.read().decode().strip()
-            ssh.close()
-
-            # Split into lines and ignore banners
-            lines = [
-                line for line in output.splitlines()
-                if not ("Connected" in line or "Authentication" in line)
-            ]
-
-            cpu_usr = cpu_sys = cpu_idle = "N/A"
-            mem_used = mem_free = "N/A"
-            load1 = "N/A"
-            disk_root = "N/A"
-
-            for line in lines:
-                if line.startswith("CPU:"):
-                    parts = line.split()
-                    try:
-                        cpu_usr = parts[1].replace("%", "")
-                        cpu_sys = parts[3].replace("%", "")
-                        cpu_idle = parts[7].replace("%", "")
-                    except Exception:
-                        pass
-                elif line.startswith("Mem:"):
-                    parts = line.split()
-                    try:
-                        mem_used = parts[1].replace("K", "")
-                        mem_free = parts[3].replace("K", "")
-                    except Exception:
-                        pass
-                elif line.startswith("Load average:"):
-                    try:
-                        load1 = line.split()[2]
-                    except Exception:
-                        pass
-                elif line.startswith("/"):
-                    try:
-                        disk_root = line.split()[4].replace("%", "")
-                    except Exception:
-                        pass
-
-            logger.info(
-                f"[ROUTER HEALTH] CPU usr={cpu_usr}% sys={cpu_sys}% idle={cpu_idle}% | "
-                f"Mem used={mem_used}K free={mem_free}K | Disk={disk_root}% | Load={load1}"
-            )
-
-        except Exception as e:
-            logger.error(f"[ROUTER HEALTH] Error: {e}")
-
+        router_ssh.get_health()
         await asyncio.sleep(5)
 
 
 class PingManager:
-    def __init__(self, target_ip, ping_duration, ip_version):
+    def __init__(self, router_ssh, target_ip, ping_duration, ip_version):
+        self.router_ssh = router_ssh
         self.target_ip = target_ip
         self.duration = ping_duration
         self.ip_version = ip_version
@@ -118,7 +63,7 @@ class PingManager:
 
         pi_task = asyncio.create_task(health_worker(stop_event_pi))
         router_task = asyncio.create_task(
-            get_router_health("192.168.1.1", "operator", "Charter123", stop_event_router)
+            get_router_health(self.router_ssh, "192.168.1.1", "operator", "Charter123", stop_event_router)
         )
 
         await asyncio.gather(*ping_tasks)
