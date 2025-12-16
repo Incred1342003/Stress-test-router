@@ -63,8 +63,8 @@ class StressScenarioManager:
         end_time = start_time + self.duration
 
         tasks = [
-            self._dns_query, 
-            self._tcp_connect, 
+            self._dns_query,
+            self._tcp_connect,
             self._http_router_hit,
         ]
 

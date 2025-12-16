@@ -2,6 +2,7 @@ import paramiko
 import time
 from utils.logger import logger
 
+
 class RouterSSHManager:
     def __init__(self, host, username, password, timeout=10):
         self.host = host
@@ -20,15 +21,14 @@ class RouterSSHManager:
             self.host,
             username=self.username,
             password=self.password,
-            timeout=self.timeout
+            timeout=self.timeout,
         )
 
         logger.info(f"Connected to router {self.host} via SSH")
 
-
         self.shell = self.ssh.invoke_shell()
         self.shell.settimeout(2)
-        time.sleep(0.5) 
+        time.sleep(0.5)
 
     def disconnect(self):
         if self.shell:

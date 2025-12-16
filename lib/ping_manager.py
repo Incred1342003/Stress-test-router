@@ -1,9 +1,6 @@
 import asyncio
 import random
 import time
-import psutil
-import os
-import paramiko
 from utils.pi_health_check import health_worker
 from utils.logger import logger
 
@@ -63,7 +60,13 @@ class PingManager:
 
         pi_task = asyncio.create_task(health_worker(stop_event_pi))
         router_task = asyncio.create_task(
-            get_router_health(self.router_ssh, "192.168.1.1", "operator", "Charter123", stop_event_router)
+            get_router_health(
+                self.router_ssh,
+                "192.168.1.1",
+                "operator",
+                "Charter123",
+                stop_event_router,
+            )
         )
 
         await asyncio.gather(*ping_tasks)
@@ -75,4 +78,3 @@ class PingManager:
         await router_task
 
         return results
-

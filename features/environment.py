@@ -5,7 +5,7 @@ import subprocess
 from dotenv import load_dotenv
 from utils.logger import logger
 from utils.command_runner import run_cmd
-from src.router_ssh_manager import RouterSSHManager
+from lib.router_ssh_manager import RouterSSHManager
 
 
 async def cleanup_namespace(ns):
@@ -55,10 +55,14 @@ def before_all(context):
         raise
 
     try:
-        cmd = f"./ssh-login.py -i {os.getenv('ROUTER_MAC')}"
-        subprocess.run(cmd, shell=True, check=True,
-               stdout=subprocess.DEVNULL,
-               stderr=subprocess.DEVNULL)
+        cmd = f"./script/ssh-login.py -i {os.getenv('ROUTER_MAC')}"
+        subprocess.run(
+            cmd,
+            shell=True,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         logger.info("SSH login script executed successfully.")
     except subprocess.CalledProcessError as e:
         logger.error(f"SSH login script failed: {e}")
@@ -90,6 +94,7 @@ def before_all(context):
     except Exception as e:
         logger.error(f"Failed to load configuration: {e}")
         raise
+
 
 def before_scenario(context, scenario):
     logger.info("----- BEFORE SCENARIO CLEANING PROCESS STARTS -----")

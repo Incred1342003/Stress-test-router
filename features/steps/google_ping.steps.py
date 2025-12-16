@@ -1,6 +1,6 @@
 import asyncio
 from behave import when, then
-from src.ping_manager import PingManager
+from lib.ping_manager import PingManager
 from utils.logger import logger
 
 
