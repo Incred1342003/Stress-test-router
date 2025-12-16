@@ -1,8 +1,11 @@
+import os
 import yaml
 import asyncio
 import subprocess
+from dotenv import load_dotenv
 from utils.logger import logger
 from utils.command_runner import run_cmd
+from lib.router_ssh_manager import RouterSSHManager
 
 
 async def cleanup_namespace(ns):
@@ -41,12 +44,56 @@ def cleanup():
 
 
 def before_all(context):
+
     logger.info("----- STARTING NETWORK STRESS TEST -----")
-    logger.info("Loading configuration from config.yaml")
-    with open("config.yaml") as file:
-        context.config = yaml.safe_load(file)
-    logger.info("Configuration loaded successfully.")
+
+    try:
+        load_dotenv()
+        logger.info(".env file loaded successfully.")
+    except Exception as e:
+        logger.error(f"Failed to load .env file: {e}")
+        raise
+
+    try:
+        cmd = f"./script/ssh-login.py -i {os.getenv('ROUTER_MAC')}"
+        subprocess.run(
+            cmd,
+            shell=True,
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        logger.info("SSH login script executed successfully.")
+    except subprocess.CalledProcessError as e:
+        logger.error(f"SSH login script failed: {e}")
+        raise
+
+    logger.info("----- CLEANING UP BEFORE STARTING TEST -----")
     cleanup()
+    logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
+
+    logger.info("----- INITIALIZING ROUTER SSH MANAGER -----")
+    context.router_ssh = RouterSSHManager(
+        host=os.getenv("HOST"),
+        username=os.getenv("USERNAME"),
+        password=os.getenv("PASSWORD"),
+        timeout=int(os.getenv("SSH_TIMEOUT", 10)),
+    )
+    try:
+        context.router_ssh.connect()
+        logger.info("Router SSH Manager initialized successfully.")
+    except Exception as e:
+        logger.error(f"Failed to connect to router: {e}")
+        raise
+
+    logger.info("----- LOADING CONFIGURATION -----")
+    try:
+        with open("config.yaml") as file:
+            context.config = yaml.safe_load(file)
+        logger.info("Configuration loaded successfully.")
+    except Exception as e:
+        logger.error(f"Failed to load configuration: {e}")
+        raise
 
 
 def before_scenario(context, scenario):
@@ -59,3 +106,4 @@ def after_all(context):
     logger.info("----- END CLEANING PROCESS STARTS -----")
     cleanup()
     logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
+    context.router_ssh.disconnect()

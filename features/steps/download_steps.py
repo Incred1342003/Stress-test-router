@@ -1,10 +1,10 @@
 import asyncio
 from behave import when
 from utils.logger import logger
-from src.download_manager import DownloadManager
+from lib.download_manager import DownloadManager
 
 
-@when("all clients start downloading the 20MB ZIP file simultaneously")
+@when("all clients start downloading the configured file simultaneously")
 def step_start_parallel_download(context):
     logger.info("----- PARALLEL DOWNLOAD STARTED -----")
     dm = DownloadManager(

@@ -23,8 +23,15 @@ async def run_cmd(cmd, suppress_output=False):
     }
 
 
+async def get_router_health(router_ssh, host, username, password, stop_event):
+    while not stop_event.is_set():
+        router_ssh.get_health()
+        await asyncio.sleep(5)
+
+
 class PingManager:
-    def __init__(self, target_ip, ping_duration, ip_version):
+    def __init__(self, router_ssh, target_ip, ping_duration, ip_version):
+        self.router_ssh = router_ssh
         self.target_ip = target_ip
         self.duration = ping_duration
         self.ip_version = ip_version
@@ -45,10 +52,29 @@ class PingManager:
     async def run_test(self, namespaces):
         end_time = time.time() + self.duration
         results = {}
-        stop_event = asyncio.Event()
-        ping_task = [self.worker(ns, end_time, results) for ns in namespaces]
-        health_task = asyncio.create_task(health_worker(stop_event))
-        await asyncio.gather(*ping_task)
-        stop_event.set()
-        await health_task
+
+        stop_event_pi = asyncio.Event()
+        stop_event_router = asyncio.Event()
+
+        ping_tasks = [self.worker(ns, end_time, results) for ns in namespaces]
+
+        pi_task = asyncio.create_task(health_worker(stop_event_pi))
+        router_task = asyncio.create_task(
+            get_router_health(
+                self.router_ssh,
+                "192.168.1.1",
+                "operator",
+                "Charter123",
+                stop_event_router,
+            )
+        )
+
+        await asyncio.gather(*ping_tasks)
+
+        stop_event_pi.set()
+        stop_event_router.set()
+
+        await pi_task
+        await router_task
+
         return results
