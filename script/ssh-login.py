@@ -82,7 +82,14 @@ def enable_ssh(token, state):
             {"module": "SSHM", "key": "sshTotalSessTimeout", "value": str(time_out)},
         ]
     }
-    print("SSH payoad: ", payload_dict)
+    # Mask password before logging payload_dict.
+    payload_log = dict(payload_dict)
+    payload_log['kvConfigs'] = []
+    for item in payload_dict['kvConfigs']:
+        masked_item = dict(item)
+        if masked_item.get('key') == 'sshAuthPasswd':
+            masked_item['value'] = '****'
+        payload_log['kvConfigs'].append(masked_item)
 
     url = (
         domain
