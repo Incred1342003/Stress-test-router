@@ -49,14 +49,6 @@ def step_interface_available(context):
     context.interface = interface
 
 
-@given("the download target URL is configured")
-def step_configure_file_url(context):
-
-    context.download_url = context.config.get("DOWNLOAD_URL")
-
-    assert context.download_url, "Download URL missing in config!"
-
-
 @given('I launch 10 clients using the selected topology')
 def step_launch_clients(context):
     config = load_config()
