@@ -6,3 +6,4 @@ PyYAML
 psutil
 mkdocs
 mkdocs-material
+dotenv
