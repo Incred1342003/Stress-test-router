@@ -7,3 +7,4 @@ psutil
 mkdocs
 mkdocs-material
 dotenv
+paramiko
