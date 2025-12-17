@@ -8,7 +8,7 @@ from lib.video_manager import VideoManager
 def step_start_video_streaming(context):
     logger.info("----- PARALLEL VIDEO STREAMING (MPV) STARTED -----")
     vm = VideoManager(
-        video_ids=context.config.get("video_ids"),
+        video_map=context.config.get("video_ids"),   # dict from config.yaml
         duration=int(context.config.get("video_duration")),
     )
     context.video_results = asyncio.run(
