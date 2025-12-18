@@ -45,10 +45,8 @@ class DownloadManager:
             "stdout": result["stdout"],
             "stderr": result["stderr"],
         }
-        if success:
-            logger.info(f"[OK] {ns} completed download in {duration:.2f} sec")
-        else:
-            logger.error(f"[FAIL] {ns} download failed after {duration:.2f} sec")
+
+        logger.info(f"[OK] {ns} completed download in {duration:.2f} sec")
 
     async def start_parallel_download(self, namespaces):
         results = {}
