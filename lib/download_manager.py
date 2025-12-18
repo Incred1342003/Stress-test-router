@@ -19,6 +19,7 @@ async def run_cmd(cmd):
         "stderr": stderr.decode().strip() if stderr else "",
     }
 
+
 async def get_router_health(router_ssh, host, username, password, stop_event):
     while not stop_event.is_set():
         router_ssh.get_health()
@@ -119,11 +120,12 @@ class DownloadManager:
             )
 
         logger.info(
-            "\n" + 
-            "═" * 70 + "\n" +
-            f"DOWNLOAD SUMMARY | SUCCESS: {success_count}/{len(results)}" + 
-            "\n" + 
-            "═" * 70
+            "\n"
+            + "═" * 70
+            + "\n"
+            + f"DOWNLOAD SUMMARY | SUCCESS: {success_count}/{len(results)}"
+            + "\n"
+            + "═" * 70
         )
         logger.info(f"\n {table}" + "\n" + "═" * 70 + "\n")
 

@@ -13,7 +13,7 @@ class NetworkManager:
         self.parent_if = interface
         self.client_namespaces = []
         self.client_ips = {}
-        self.client_info = {}   # ns -> {"ipv4": str, "ipv6": str, "status": str}
+        self.client_info = {}  # ns -> {"ipv4": str, "ipv6": str, "status": str}
         self.isFailed = False
         self.count = 0
 
@@ -29,7 +29,7 @@ class NetworkManager:
                     ip_v4 = output_v4.split("inet ")[1].split()[0]
                     ipv4_only = ip_v4.split("/")[0]
                     self.client_ips[namespace] = ip_v4
-                    
+
                 output_v6 = await run_cmd(
                     f"sudo ip netns exec {namespace} ip -6 addr show {interface}"
                 )
@@ -46,7 +46,7 @@ class NetworkManager:
                         "mac": mac,
                         "ipv4": ipv4_only,
                         "ipv6": ipv6_only or "Not created",
-                        "status": "Created"
+                        "status": "Created",
                     }
                     return True
             except subprocess.CalledProcessError:
@@ -56,7 +56,7 @@ class NetworkManager:
         self.client_info[namespace] = {
             "ipv4": "Not created",
             "ipv6": "Not created",
-            "status": "Not created"
+            "status": "Not created",
         }
         return False
 
@@ -94,7 +94,12 @@ class NetworkManager:
         mac = f"00:1A:80:{(i >> 8) & 0xff:02x}:{(i >> 4) & 0xff:02x}:{i & 0xff:02x}"
         self.client_namespaces.append(ns)
         # Default entry
-        self.client_info[ns] = {"mac": "Not created", "ipv4": "Not created", "ipv6": "Not created", "status": "Not created"}
+        self.client_info[ns] = {
+            "mac": "Not created",
+            "ipv4": "Not created",
+            "ipv6": "Not created",
+            "status": "Not created",
+        }
         try:
             await run_cmd(f"sudo ip netns add {ns}")
             await run_cmd(
@@ -157,9 +162,12 @@ class NetworkManager:
 
         banner = "═" * 70
         logger.info(
-            "\n" + banner + "\n" +
-            f"CLIENT SUMMARY | Created: {created_count}/{len(self.client_info)}" +
-            "\n" + banner
+            "\n"
+            + banner
+            + "\n"
+            + f"CLIENT SUMMARY | Created: {created_count}/{len(self.client_info)}"
+            + "\n"
+            + banner
         )
         logger.info("\n" + str(table) + "\n" + banner + "\n")
 
