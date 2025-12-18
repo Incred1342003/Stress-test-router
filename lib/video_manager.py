@@ -1,5 +1,4 @@
 import asyncio
-import subprocess
 from utils.logger import logger
 from utils.pi_health_check import health_worker
 
@@ -42,13 +41,15 @@ class VideoManager:
         is_success = result["returncode"] in [0, 124]
 
         if not is_success:
-            logger.error(f"[ERROR] {ns} stream failed. Code: {result['returncode']} | Stderr: {result['stderr']}")
+            logger.error(
+                f"[ERROR] {ns} stream failed. Code: {result['returncode']} | Stderr: {result['stderr']}"
+            )
 
         return {
             "success": is_success,
             "returncode": result["returncode"],
             "stdout": result["stdout"],
-            "stderr": result["stderr"]
+            "stderr": result["stderr"],
         }
 
     async def start_parallel_streaming(self, namespaces: list[str]) -> dict:
@@ -58,10 +59,10 @@ class VideoManager:
             for i, ns in enumerate(namespaces)
         ]
         health_task = asyncio.create_task(health_worker(stop_event))
-        
+
         results_list = await asyncio.gather(*tasks)
-        
+
         stop_event.set()
         await health_task
-        
+
         return {ns: res for ns, res in zip(namespaces, results_list)}

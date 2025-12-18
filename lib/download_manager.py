@@ -112,17 +112,13 @@ class DownloadManager:
             )
 
         logger.info("\n" + "═" * 70)
-        logger.info(
-            f"DOWNLOAD SUMMARY | SUCCESS: {success_count}/{len(results)}"
-        )
+        logger.info(f"DOWNLOAD SUMMARY | SUCCESS: {success_count}/{len(results)}")
         logger.info("═" * 70)
         logger.info(table)
         logger.info("═" * 70 + "\n")
 
     async def start_parallel_download(self, namespaces, global_timeout=300):
-        logger.info(
-            f"----- STARTING DOWNLOAD FOR {len(namespaces)} CLIENTS -----"
-        )
+        logger.info(f"----- STARTING DOWNLOAD FOR {len(namespaces)} CLIENTS -----")
 
         results = {}
         stop_event = asyncio.Event()
@@ -131,9 +127,7 @@ class DownloadManager:
         tasks = [self.worker(ns, results) for ns in namespaces]
 
         try:
-            await asyncio.wait_for(
-                asyncio.gather(*tasks), timeout=global_timeout
-            )
+            await asyncio.wait_for(asyncio.gather(*tasks), timeout=global_timeout)
         except asyncio.TimeoutError:
             logger.error("!!! GLOBAL TIMEOUT REACHED !!!")
         finally:
