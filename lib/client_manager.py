@@ -15,7 +15,7 @@ class NetworkManager:
         self.isFailed = False
         self.count = 0
 
-    async def wait_for_ip(self, namespace, interface, timeout=2):
+    async def wait_for_ip(self, namespace, interface, timeout=20):
         start = time.time()
         while time.time() - start < timeout:
             try:

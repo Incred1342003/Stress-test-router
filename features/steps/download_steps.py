@@ -14,7 +14,7 @@ def step_configure_file_url(context):
 def step_start_parallel_download(context):
     logger.info("----- PARALLEL DOWNLOAD STARTED -----")
     dm = DownloadManager(
-        url=context.download_url, timeout=context.config.get("DOWNLOAD_TIMEOUT")
+        url=context.download_url
     )
     context.download_results = asyncio.run(
         dm.start_parallel_download(context.net_mgr.client_namespaces)
