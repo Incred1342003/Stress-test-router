@@ -13,7 +13,7 @@ def step_init_manager(context):
 
 @when('I provision "{count:d}" virtual clients using macvlan')
 def step_provision_clients(context, count):
-    logger.info(f"--- Creating {count} Virtual Clients ---")
+    logger.info(f"----- Creating {count} Virtual Clients -----")
 
     asyncio.run(context.net_mgr.create_clients(count))
     logger.info(
@@ -24,7 +24,7 @@ def step_provision_clients(context, count):
 @when('all clients attempt to ping the router simultaneously using "{ip_version}"')
 def step_ping_clients(context, ip_version):
 
-    logger.info(f"--- PARALLEL CLIENT PING TO ROUTER STARTED ({ip_version}) ---")
+    logger.info(f"----- PARALLEL CLIENT PING TO ROUTER STARTED ({ip_version}) -----")
 
     if ip_version == "IPV6":
         router_ip = context.router_IPV6

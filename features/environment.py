@@ -97,7 +97,7 @@ def before_all(context):
 
 
 def before_scenario(context, scenario):
-    logger.info("----- BEFORE SCENARIO CLEANING PROCESS STARTS -----")
+    logger.info("\n" + "----- BEFORE SCENARIO CLEANING PROCESS STARTS -----")
     cleanup()
     logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
 

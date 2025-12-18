@@ -19,14 +19,21 @@ async def run_cmd(cmd):
         "stderr": stderr.decode().strip() if stderr else "",
     }
 
+async def get_router_health(router_ssh, host, username, password, stop_event):
+    while not stop_event.is_set():
+        router_ssh.get_health()
+        await asyncio.sleep(5)
+
 
 class DownloadManager:
     def __init__(
         self,
+        router_ssh,
         url="http://speedtest.tele2.net/10MB.zip",
         worker_timeout=60,
         max_concurrent=10,
     ):
+        self.router_ssh = router_ssh
         self.url = url
         self.worker_timeout = worker_timeout
         self.semaphore = asyncio.Semaphore(max_concurrent)
@@ -111,18 +118,32 @@ class DownloadManager:
                 ]
             )
 
-        logger.info("\n" + "═" * 70)
-        logger.info(f"DOWNLOAD SUMMARY | SUCCESS: {success_count}/{len(results)}")
-        logger.info("═" * 70)
-        logger.info(table)
-        logger.info("═" * 70 + "\n")
+        logger.info(
+            "\n" + 
+            "═" * 70 + "\n" +
+            f"DOWNLOAD SUMMARY | SUCCESS: {success_count}/{len(results)}" + 
+            "\n" + 
+            "═" * 70
+        )
+        logger.info(f"\n {table}" + "\n" + "═" * 70 + "\n")
 
     async def start_parallel_download(self, namespaces, global_timeout=300):
         logger.info(f"----- STARTING DOWNLOAD FOR {len(namespaces)} CLIENTS -----")
 
         results = {}
         stop_event = asyncio.Event()
+        stop_event_router = asyncio.Event()
+
         health_task = asyncio.create_task(health_worker(stop_event))
+        router_task = asyncio.create_task(
+            get_router_health(
+                self.router_ssh,
+                "192.168.1.1",
+                "operator",
+                "Charter123",
+                stop_event_router,
+            )
+        )
 
         tasks = [self.worker(ns, results) for ns in namespaces]
 
@@ -132,7 +153,10 @@ class DownloadManager:
             logger.error("!!! GLOBAL TIMEOUT REACHED !!!")
         finally:
             stop_event.set()
+            stop_event_router.set()
+
             await health_task
+            await router_task
             self.display_results(results)
 
         return results

@@ -61,6 +61,6 @@ class RouterSSHManager:
                 cpu_line = line.strip()
                 break
 
-        formatted = f"[ROUTER HEALTH] {cpu_line}"
+        formatted = f"[ROUTER ] {cpu_line}" + "\n"
         logger.info(formatted)
         return formatted
