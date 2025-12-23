@@ -3,11 +3,11 @@ ROUTER_IPV6: "fe80::7693:daff:fecd:1730"
 INTERFACE: "eth0"
 PING_DURATION: 30
 DOWNLOAD_URL: "http://speedtest.tele2.net/10MB.zip"
-DOWNLOAD_TIMEOUT: 30              
-video_ids:                               
-  - dQw4w9WgXcQ   
-  - M7FIvfx5J10   
-  - 3JZ_D3ELwOQ   
-  - L_jWHffIx5E   
-  - kJQP7kiw5Fk   
-video_duration: 30                       
+DOWNLOAD_TIMEOUT: 30
+video_ids:
+  - "LXb3EKWsInQ"
+  - "1La4QzGeaaQ"
+  - "vX2vsvdq8nw"
+  - "9No-FiEInLA"
+  - "wNGtx4C9i5o"
+video_duration: 30

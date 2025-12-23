@@ -1,5 +1,6 @@
 import asyncio
-from behave import when, then
+
+from behave import then, when
 from lib.ping_manager import PingManager
 from utils.logger import logger
 
@@ -16,6 +17,7 @@ def step_ping_google(context, ip_version):
     ping_duration = context.config.get("PING_DURATION")
 
     pm = PingManager(context.router_ssh, google_dns_ip, ping_duration, ip_version)
+
     context.results = asyncio.run(
         pm.run_test([ns for ns in context.net_mgr.client_namespaces])
     )
@@ -24,6 +26,7 @@ def step_ping_google(context, ip_version):
 
 @then("each client should successfully reach the internet")
 def step_validate_ping(context):
-    failed = [ns for ns, success in context.results.items() if not success]
-    assert len(failed) == 0, f"Clients failed to reach Google DNS: {', '.join(failed)}"
+
+    failed = [ns for ns, data in context.results.items() if not data["success"]]
+    assert len(failed) == 0, f"Clients failed to reach Google DNS: {failed}"
     logger.info("All clients successfully reached Google DNS.")

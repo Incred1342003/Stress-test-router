@@ -1,25 +1,23 @@
 import asyncio
 import random
 import time
-from utils.pi_health_check import health_worker
+
+from prettytable import PrettyTable
 from utils.logger import logger
+from utils.pi_health_check import health_worker
 
 
-async def run_cmd(cmd, suppress_output=False):
+async def run_cmd(cmd):
     proc = await asyncio.create_subprocess_shell(
         cmd,
-        stdout=(
-            asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
-        ),
-        stderr=(
-            asyncio.subprocess.DEVNULL if suppress_output else asyncio.subprocess.PIPE
-        ),
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await proc.communicate()
     return {
         "returncode": proc.returncode,
-        "stdout": None if suppress_output else stdout.decode(),
-        "stderr": None if suppress_output else stderr.decode(),
+        "stdout": stdout.decode().strip() if stdout else "",
+        "stderr": stderr.decode().strip() if stderr else "",
     }
 
 
@@ -38,25 +36,70 @@ class PingManager:
 
     async def worker(self, ns, end_time, results):
         success = True
+        received_pings = 0
+        start_time = time.time()
+        ping_cmd = "-6" if self.ip_version == "IPV6" else "-4"
+
         while time.time() < end_time:
-            ping_cmd = "-6" if self.ip_version == "IPV6" else "-4"
             result = await run_cmd(
                 f"sudo ip netns exec {ns} ping {ping_cmd} -c 1 -W 1 {self.target_ip}"
             )
-            if result["returncode"] != 0:
+            if result["returncode"] == 0:
+                received_pings += 1
+            else:
                 success = False
                 logger.error(f"[FAIL] {ns} cannot reach {self.target_ip}")
             await asyncio.sleep(random.random() * 0.05)
-        results[ns] = success
+
+        actual_duration = time.time() - start_time
+
+        total_bytes = received_pings * 128
+        speed_mbps = (total_bytes * 8) / (actual_duration * 1024 * 1024)
+
+        results[ns] = {
+            "success": success,
+            "speed": round(speed_mbps, 6),
+            "duration": round(actual_duration, 2),
+            "error": "" if success else "Packet Loss",
+        }
+
+    def display_results(self, results):
+        table = PrettyTable()
+        table.field_names = [
+            "Namespace",
+            "Status",
+            "Time (s)",
+            "Speed (Mbps)",
+            "Remarks",
+        ]
+        table.align["Namespace"] = "l"
+        table.align["Status"] = "c"
+        table.align["Remarks"] = "l"
+
+        success_count = 0
+        for ns, data in sorted(results.items()):
+            status = "OK" if data["success"] else "FAIL"
+            if data["success"]:
+                success_count += 1
+            table.add_row([ns, status, data["duration"], data["speed"], data["error"]])
+
+        logger.info(
+            "\n"
+            + "═" * 70
+            + "\n"
+            + f"PING SUMMARY | SUCCESS: {success_count}/{len(results)}"
+            + "\n"
+            + "═" * 70
+        )
+        logger.info(f"\n {table}\n" + "═" * 70 + "\n")
 
     async def run_test(self, namespaces):
         end_time = time.time() + self.duration
         results = {}
-
         stop_event_pi = asyncio.Event()
         stop_event_router = asyncio.Event()
 
-        ping_tasks = [self.worker(ns, end_time, results) for ns in namespaces]
+        tasks = [self.worker(ns, end_time, results) for ns in namespaces]
 
         pi_task = asyncio.create_task(health_worker(stop_event_pi))
         router_task = asyncio.create_task(
@@ -69,12 +112,12 @@ class PingManager:
             )
         )
 
-        await asyncio.gather(*ping_tasks)
+        await asyncio.gather(*tasks)
 
         stop_event_pi.set()
         stop_event_router.set()
-
         await pi_task
         await router_task
 
+        self.display_results(results)
         return results

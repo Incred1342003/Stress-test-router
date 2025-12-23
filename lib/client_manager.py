@@ -39,7 +39,7 @@ class NetworkManager:
 
                 if ipv4_only:
                     logger.info(
-                        f"{namespace} got IPv4: {ipv4_only} and IPv6: {ipv6_only or 'Not created'}"
+                        f"{namespace} got IPv4: {ipv4_only} and IPv6: {ipv6_only or 'Not created'}"  # noqa: E501
                     )
                     # Save info for summary table
                     self.client_info[namespace] = {
@@ -74,11 +74,11 @@ class NetworkManager:
                     if "inet " in output:
                         await run_cmd(
                             f"sudo ip netns exec {ns} dhclient -r {macvlan} "
-                            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"
+                            f"-pf /run/dhclient-{ns}.pid -lf /var/lib/dhcp/dhclient-{ns}.leases"  # noqa: E501
                         )
                         await run_cmd(
                             f"sudo ip netns exec {ns} dhclient -6 -r {macvlan} -pf "
-                            f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases"
+                            f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases"  # noqa: E501
                         )
                     await run_cmd(f"sudo ip netns delete {ns}")
                     await run_cmd(f"sudo rm -rf /etc/netns/{ns}")
@@ -103,7 +103,7 @@ class NetworkManager:
         try:
             await run_cmd(f"sudo ip netns add {ns}")
             await run_cmd(
-                f"sudo ip link add link {self.parent_if} {macvlan} address {mac} type macvlan mode bridge"
+                f"sudo ip link add link {self.parent_if} {macvlan} address {mac} type macvlan mode bridge"  # noqa: E501
             )
             await run_cmd(f"sudo ip link set {macvlan} netns {ns}")
             await run_cmd(f"sudo ip netns exec {ns} ip link set dev {macvlan} up")
@@ -118,10 +118,10 @@ class NetworkManager:
                     await run_cmd(f"sudo mkdir -p /etc/netns/{ns}")
                     await run_cmd(
                         f"sudo ip netns exec {ns} dhclient -6 -v {macvlan} -pf "
-                        f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases &"
+                        f"/run/dhclient6-{ns}.pid -lf /var/lib/dhcp/dhclient6-{ns}.leases &"  # noqa: E501
                     )
                     await run_cmd(
-                        f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf'
+                        f'echo "nameserver 8.8.8.8\nnameserver 1.1.1.1" | sudo tee /etc/netns/{ns}/resolv.conf'  # noqa: E501
                     )
                     return
                 logger.warning(f"{ns} retrying IP acquisition ({attempt + 1}/4)...")

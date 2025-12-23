@@ -1,13 +1,15 @@
 import asyncio
-from behave import when, then
-from utils.logger import logger
+
+from behave import then, when
 from lib.video_manager import VideoManager
+from utils.logger import logger
 
 
 @when("all clients start streaming a video simultaneously")
 def step_start_video_streaming(context):
     logger.info("----- PARALLEL VIDEO STREAMING (MPV) STARTED -----")
     vm = VideoManager(
+        router_ssh=context.router_ssh,
         video_ids=context.config.get("video_ids"),
         duration=int(context.config.get("video_duration")),
     )
