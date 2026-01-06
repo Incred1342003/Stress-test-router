@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from utils.logger import logger
 from utils.command_runner import run_cmd
 from lib.router_ssh_manager import RouterSSHManager
+from utils import plotter
 
 
 async def cleanup_namespace(ns):
@@ -107,3 +108,8 @@ def after_all(context):
     cleanup()
     logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
     context.router_ssh.disconnect()
+    try:
+        plotter.generate_graphs()
+        logger.info("Graphs generated successfully.")
+    except Exception as e:
+        logger.error(f"Failed to generate graphs: {e}")
