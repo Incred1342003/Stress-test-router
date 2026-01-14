@@ -6,28 +6,32 @@ import logging
 import subprocess
 from dotenv import load_dotenv
 from datetime import datetime
-from utils.logger import logger 
+from utils.logger import logger, add_version_specific_file_handler
 from utils.command_runner import run_cmd
 from lib.router_ssh_manager import RouterSSHManager
 
 summary_logger = None
 
-def setup_summary_logger():
+
+def setup_summary_logger(router_version):
     """
-    Sets up the summary logger. 
-    mode='w' ensures the file is cleared when this logger is initialized.
+    Sets up a version-specific summary logger.
+    Clears the file ('w') for that specific version.
     """
-    s_logger = logging.getLogger("scenario_summary")
+    logger_name = f"summary_{router_version}"
+    s_logger = logging.getLogger(logger_name)
     s_logger.setLevel(logging.INFO)
-    s_logger.propagate = False 
-    
+    s_logger.propagate = False
+
     if not s_logger.handlers:
         os.makedirs("results/logs", exist_ok=True)
-        handler = logging.FileHandler("results/logs/summary.log", mode='w') 
+        # Unique summary log based on hardware
+        log_path = f"results/logs/{router_version}_summary.log"
+        handler = logging.FileHandler(log_path, mode='w')
         formatter = logging.Formatter("%(asctime)s | %(message)s")
         handler.setFormatter(formatter)
         s_logger.addHandler(handler)
-    
+
     return s_logger
 
 
@@ -69,13 +73,7 @@ def cleanup():
 def before_all(context):
     global summary_logger
 
-    summary_logger = setup_summary_logger()
-    summary_logger.info("Test Run Started:")
-    
-    os.makedirs("results/json", exist_ok=True)
-    with open("results/json/summary.json", "w") as f:
-        json.dump([], f)
-
+    # Initial console-only logging until hardware is detected
     logger.info("----- STARTING NETWORK STRESS TEST -----")
 
     try:
@@ -83,7 +81,7 @@ def before_all(context):
         logger.info(".env file loaded successfully.")
     except Exception as e:
         logger.error(f"Failed to load .env file: {e}")
-        raise
+        raise AssertionError(f"Failed to load .env file: {e}")
 
     logger.info("----- EXECUTING SSH LOGIN SCRIPT -----")
     try:
@@ -98,7 +96,7 @@ def before_all(context):
         logger.info("SSH login script executed successfully.")
     except subprocess.CalledProcessError as e:
         logger.error(f"SSH login script failed: {e}")
-        raise
+        raise AssertionError(f"SSH login script failed: {e}")
 
     logger.info("----- CLEANING UP BEFORE STARTING TEST -----")
     cleanup()
@@ -111,12 +109,28 @@ def before_all(context):
         password=os.getenv("PASSWORD"),
         timeout=int(os.getenv("SSH_TIMEOUT", 10)),
     )
+
     try:
         context.router_ssh.connect()
-        logger.info("Router SSH Manager initialized successfully.")
+        # DETECT HARDWARE VERSION
+        context.router_version = context.router_ssh.get_router_version()
+        logger.info(f"Router Version Detected: {context.router_version}")
     except Exception as e:
         logger.error(f"Failed to connect to router: {e}")
-        raise
+        raise AssertionError(f"Failed to Connect to router: {e}")
+
+    # 1. TRIGGER REALTIME LOG FILE (Dynamic Name)
+    add_version_specific_file_handler(context.router_version)
+
+    # 2. INITIALIZE SUMMARY LOG (Dynamic Name)
+    summary_logger = setup_summary_logger(context.router_version)
+    summary_logger.info(f"Test Run Started for {context.router_version}:")
+
+    # 3. INITIALIZE JSON FILE (Dynamic Name)
+    os.makedirs("results/json", exist_ok=True)
+    context.json_file = f"results/json/{context.router_version}_summary.json"
+    with open(context.json_file, "w") as f:
+        json.dump([], f)
 
     logger.info("----- LOADING CONFIGURATION -----")
     try:
@@ -125,7 +139,7 @@ def before_all(context):
         logger.info("Configuration loaded successfully.")
     except Exception as e:
         logger.error(f"Failed to load configuration: {e}")
-        raise
+        raise AssertionError(f"Failed to load configuration: {e}")
 
 
 def before_scenario(context, scenario):
@@ -141,10 +155,7 @@ def after_scenario(context, scenario):
     failure_message = None
 
     for step in scenario.steps:
-        step_info = {
-            "name": step.name,
-            "status": step.status.name
-        }
+        step_info = {"name": step.name, "status": step.status.name}
         if step.status.name == "failed":
             step_info["failure_message"] = str(step.exception)
             failure_message = str(step.exception)
@@ -160,23 +171,24 @@ def after_scenario(context, scenario):
         "scenario": scenario.name,
         "status": scenario.status.name,
         "steps": steps_data,
+        "router_version": context.router_version,  # Added for record keeping
         "timestamps": {
             "start": getattr(scenario, 'start_time', datetime.now().isoformat()),
-            "end": end_time
+            "end": end_time,
         },
-        "failure_message": failure_message
+        "failure_message": failure_message,
     }
 
-    json_file = "results/json/summary.json"
+    # Save to version-specific JSON
     try:
-        with open(json_file, "r") as f:
+        with open(context.json_file, "r") as f:
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         data = []
 
     data.append(scenario_result)
 
-    with open(json_file, "w") as f:
+    with open(context.json_file, "w") as f:
         json.dump(data, f, indent=2)
 
     if summary_logger:
@@ -184,12 +196,25 @@ def after_scenario(context, scenario):
             f"Feature: {scenario.feature.name} | Scenario: {scenario.name} | "
             f"Status: {scenario.status.name} | Failure: {failure_message or 'None'}"
         )
-    
+
     logger.info(f"Scenario '{scenario.name}' finished. Result: {scenario.status.name}")
 
 
 def after_all(context):
+    logger.info("----- GENERATING PERFORMANCE GRAPHS -----")
+
+    try:
+        from utils.plotter import StressTestPlotter
+
+        plotter = StressTestPlotter(context.router_version, context.router_ssh)
+        plotter.plot_health()
+        ns_speeds = getattr(context, 'ns_speeds', {})
+        plotter.plot_speeds(ns_speeds)
+
+    except Exception as e:
+        logger.error(f"Plotting failed: {e}")
+
     logger.info("----- END CLEANING PROCESS STARTS -----")
     cleanup()
-    logger.info("----- CLEANUP DONE SUCCESSFULLY -----")
-    context.router_ssh.disconnect()
+    if hasattr(context, 'router_ssh'):
+        context.router_ssh.disconnect()
