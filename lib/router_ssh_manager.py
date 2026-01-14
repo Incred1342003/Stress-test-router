@@ -23,7 +23,12 @@ class RouterSSHManager:
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            self.ssh.connect(self.host, username=self.username, password=self.password, timeout=self.timeout)
+            self.ssh.connect(
+                self.host,
+                username=self.username,
+                password=self.password,
+                timeout=self.timeout,
+            )
             self.shell = self.ssh.invoke_shell()
             self.shell.settimeout(2)
             logger.info(f"Connected to {self.host}")

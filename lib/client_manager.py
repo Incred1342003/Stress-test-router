@@ -12,7 +12,9 @@ class NetworkManager:
         self.parent_if = interface
         self.client_namespaces = []
         self.client_ips = {}
-        self.client_info = {}  # ns -> {"mac": str, "ipv4": str, "ipv6": str, "status": str}
+        self.client_info = (
+            {}
+        )  # ns -> {"mac": str, "ipv4": str, "ipv6": str, "status": str}
         self.count = 0
         self.failure_messages = {}  # ns -> failure reason
 
@@ -145,7 +147,9 @@ class NetworkManager:
         self.count = 0  # Reset for next use
 
         if self.failure_messages:
-            details = "; ".join([f"{ns}: {msg}" for ns, msg in self.failure_messages.items()])
+            details = "; ".join(
+                [f"{ns}: {msg}" for ns, msg in self.failure_messages.items()]
+            )
             # Option: cleanup on failure
             # await self.cleanup()
             raise AssertionError(f"Client creation failed. Details: {details}")
@@ -173,9 +177,10 @@ class NetworkManager:
         # Custom Banner and Table Output
         banner = "════" * 18
         logger.info(
-            "\n" + banner +
-            f"\nCLIENT SUMMARY | Created: {created_count}/{len(self.client_info)}\n" +
-            banner
+            "\n"
+            + banner
+            + f"\nCLIENT SUMMARY | Created: {created_count}/{len(self.client_info)}\n"
+            + banner
         )
         logger.info("\n" + str(table) + "\n" + banner + "\n")
 
@@ -197,10 +202,14 @@ class NetworkManager:
 
     def get_namespace_ip(self, ns):
         cmd = f"sudo ip netns exec {ns} ip addr show"
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         return result.stdout.decode("utf-8")
 
     def ping_ip_from_ns(self, ns, ip):
         cmd = f"sudo ip netns exec {ns} ping -c 1 -W 1 {ip}"
-        result = subprocess.run(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         return result.returncode == 0
